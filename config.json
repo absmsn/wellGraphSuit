@@ -1,0 +1,46 @@
+{
+    // 颜色必须是有效的颜色字符串、十六进制类型或rgb格式
+    // 获取轨迹点数据的路径
+    "pointDataURL": "http://10.83.23.53:8089/api/jxjs/getAll?jhdm=JS2015102603",
+    "targetPointsDataURL": "http://10.83.23.53:8089/api/jxjs/getBd?jhdm=JS2015102603",
+    "spatialTrack": {
+        // 在xoy平面上,坐标轴在某个象限上的格子数
+        "xyGridNum": 8,
+        // 在z轴上的格子数
+        "zGridNum": 10,
+        // x坐标轴的颜色
+        "xAxisColor": "#ff0000",
+        // y坐标轴的颜色
+        "yAxisColor": "#00ff00",
+        // z坐标轴的颜色
+        "zAxisColor": "#0000ff",
+        // z轴长度与x、y轴长度的比值
+        "zToXyRatio": 1.5,
+        // 字的颜色
+        "fontColor": "#ab076a",
+        // 垂线的颜色
+        "verticalLineColor": "grey",
+        // 轨迹线的颜色
+        "trackLineColor": "navy",
+        // 投影线的颜色
+        "projectionLineColor": "blueviolet",
+        // 字体大小与单元格大小的比值
+        "fontSizeToUnitRatio": 0.3,
+        // 是否开启自动旋转
+        "autoRotate": true
+    },
+    "horizontalProjection": {
+        // 在xoy平面上,坐标轴在某个象限上的格子数
+        "xyGridNum": 8,
+        // x坐标轴的颜色
+        "xAxisColor": "#ff0000",
+        // y坐标轴的颜色
+        "yAxisColor": "#00ff00",
+        // 字的颜色
+        "fontColor": "#ab076a",
+        // 轨迹线的颜色
+        "trackLineColor": "navy",
+        // 字体大小与单元格大小的比值
+        "fontSizeToUnitRatio": 0.5
+    }
+}
