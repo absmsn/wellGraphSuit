@@ -1,8 +1,11 @@
 {
     // 颜色必须是有效的颜色字符串、十六进制类型或rgb格式
     // 获取轨迹点数据的路径
-    "pointDataURL": "http://10.83.23.53:8089/api/jxjs/getAll?jhdm=JS2015102603",
-    "targetPointsDataURL": "http://10.83.23.53:8089/api/jxjs/getBd?jhdm=JS2015102603",
+    "trackPointDataURL": "http://10.83.23.53:8089/api/jxjs/getLxAll?jhdm=JS2020112001",
+    // 获取靶点数据的路径
+    "targetPointsDataURL": "http://10.83.23.53:8089/api/jxjs/getBd?jhdm=JS2020112001",
+    // 默认的靶半径
+    "defaultTargetRadius": 40,
     "spatialTrack": {
         // 在xoy平面上,坐标轴在某个象限上的格子数
         "xyGridNum": 8,
@@ -15,7 +18,7 @@
         // z坐标轴的颜色
         "zAxisColor": "#0000ff",
         // z轴长度与x、y轴长度的比值
-        "zToXyRatio": 1.5,
+        "maxZToXyRatio": 2,
         // 字的颜色
         "fontColor": "#ab076a",
         // 垂线的颜色
@@ -41,6 +44,16 @@
         // 轨迹线的颜色
         "trackLineColor": "navy",
         // 字体大小与单元格大小的比值
-        "fontSizeToUnitRatio": 0.5
+        "fontSizeToUnitRatio": 0.2
+    },
+    "verticalProjectionEW": {
+        "gridNum": 15,
+        "trackLineColor": "",
+        "fontSizeToUnitRatio": 0.3
+    },
+    "verticalProjectionNS": {
+        "gridNum": 15,
+        "trackLineColor": "blue",
+        "fontSizeToUnitRatio": 0.3
     }
 }

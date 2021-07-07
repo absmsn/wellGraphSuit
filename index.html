@@ -5,10 +5,10 @@
   <title>index</title>
   <meta name="renderer" content="webkit">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script src="./js/three.min.js" type="application/javascript"></script>
-  <script src="./js/OrbitControls.min.js" type="application/javascript"></script>
-  <script src="./js/json5.js" type="application/javascript"></script>
-  <script src="./js/drawWellTrack.js" type="application/javascript"></script>
+  <script src="js/three.min.js" type="application/javascript"></script>
+  <script src="js/OrbitControls.min.js" type="application/javascript"></script>
+  <script src="js/json5.min.js" type="application/javascript"></script>
+  <script src="js/drawWellTrack.js" type="application/javascript"></script>
   <link href="css/index.css" rel="stylesheet" type="text/css"/>
 </head>
 <body>
@@ -26,18 +26,29 @@
         </svg>
       </div>
     </div>
-    <div class="type-selection-area">
-      <div class="radio-group">
-        <input type="radio" id="spatialTrackSel" name="typeSel" value="spatial" checked />
-        <label for="spatialTrackSel">立体空间轨迹图</label>
+    <div class="head-container">
+      <div id="head-title"></div>
+      <div id="type-select-area">
+        <div class="radio-group">
+          <input type="radio" id="spatialTrackSel" name="typeSel" value="spatial" checked />
+          <label for="spatialTrackSel">立体空间轨迹图</label>
+        </div>
+        <div class="radio-group">
+          <input type="radio" id="verticalProjectionEWSel" name="typeSel" value="verticalEW" />
+          <label for="verticalProjectionEWSel">垂直剖面投影图(东西)</label>
+        </div>
+        <div class="radio-group">
+          <input type="radio" id="verticalProjectionNSSel" name="typeSel" value="verticalNS" />
+          <label for="verticalProjectionNSSel">垂直剖面投影图(南北)</label>
+        </div>
+        <div class= "radio-group">
+          <input type="radio" id="horizontalProjectionSel" name="typeSel" value="horizontal" />
+          <label for="horizontalProjectionSel">水平位移投影图</label>
+        </div>
       </div>
-      <div class="radio-group">
-        <input type="radio" id="verticalProjectionSel" name="typeSel" value="vertical" />
-        <label for="verticalProjectionSel">垂直剖面投影图</label>
-      </div>
-      <div class="radio-group">
-        <input type="radio" id="horizontalProjectionSel" name="typeSel" value="horizontal" />
-        <label for="horizontalProjectionSel">水平位移投影图</label>
+      <div id="spread-btn" class="mobile-head-btn">
+        <svg t="1625449564348" class="mobile-head-btn-icon" viewBox="0 0 1024 1024" p-id="3224" width="200" height="200">
+          <path d="M170.666667 469.333333h682.666666a42.666667 42.666667 0 0 1 0 85.333334H170.666667a42.666667 42.666667 0 0 1 0-85.333334z m0-298.666666h597.333333a42.666667 42.666667 0 0 1 0 85.333333H170.666667a42.666667 42.666667 0 1 1 0-85.333333z m0 597.333333h512a42.666667 42.666667 0 0 1 0 85.333333H170.666667a42.666667 42.666667 0 0 1 0-85.333333z" p-id="3225" fill="#17abe3"></path></svg>
       </div>
     </div>
     <div class="canvas-area">
@@ -45,6 +56,8 @@
       <canvas id="spatialTrack" style="display: none;"></canvas>
       <canvas id="verticalProjection" style="display: none;"></canvas>
       <canvas id="horizontalProjection" style="display: none;"></canvas>
+      <canvas id="verticalProjectionNS" style="display: none;"></canvas>
+      <canvas id="verticalProjectionEW" style="display: none;"></canvas>
     </div>
   </div>
 </body>
