@@ -1,16 +1,17 @@
 body {
     margin: 0;
     padding: 0;
+    height: 100vh;
 }
 
 .main-container {
     display: flex;
-    height: 100vh;
+    height: 100%;
     flex-direction: column;
 }
 
 #float-btn-panel {
-    position: fixed;
+    position: absolute;
     bottom: 32px;
     left: 32px;
     z-index: 1;
@@ -111,13 +112,29 @@ body {
         display: block;
     }
     #type-select-area {
-        padding: 20px 0;
+        margin: 8px;
         flex-direction: column;
+        background: #fffffff0;
+        border: 1px solid #f1f1f1;
+        border-radius: 6px;
+        box-shadow: 0 0 10px #cfcfcf;
     }
     .radio-group {
         align-items: unset;
         justify-content: center;
-        margin: 16px 0;
+        padding: 12px 6px;
+        margin: 4px;
+        border-radius: 10px;
+    }
+    .radio-group:first-child {
+        margin-top: 12px;
+    }
+    .radio-group:last-child {
+        margin-bottom: 12px;
+    }
+    .radio-group:active {
+        background: #00a3ff;
+        transition: background 2s ease 0s;
     }
     #spread-btn {
         display: flex;

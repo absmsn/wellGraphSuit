@@ -1,5 +1,6 @@
 {
     // 颜色必须是有效的颜色字符串、十六进制类型或rgb格式
+    // 形如"red", "#ff0000", "rgb(255, 0, 0)"
     // 获取轨迹点数据的路径
     "trackPointDataURL": "http://10.83.23.53:8089/api/jxjs/getLxAll?jhdm=JS2020112001",
     // 获取靶点数据的路径
@@ -47,12 +48,16 @@
         "fontSizeToUnitRatio": 0.2
     },
     "verticalProjectionEW": {
-        "gridNum": 15,
-        "trackLineColor": "",
-        "fontSizeToUnitRatio": 0.3
+        "gridNum": 12,
+        "trackLineColor": "#5807df",
+        "fontSizeToUnitRatio": 0.3,
+        "hAxisColor": "#a6b637",
+        "vAxisColor": "#542a04",
+        "fontColor": "#750299",
+        "directionLabelColor": "#30a881"
     },
     "verticalProjectionNS": {
-        "gridNum": 15,
+        "gridNum": 12,
         "trackLineColor": "blue",
         "fontSizeToUnitRatio": 0.3
     }

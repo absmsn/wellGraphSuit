@@ -148,6 +148,7 @@ function initSpatialTrack() {
   // 获取一个合适的网格大小,xoy平面
   xyUnit = getApproximateGridSize(_xyFarthest, xyGridNum, factorArray);
   _xyFarthest = fMul(xyGridNum, xyUnit);
+  // 获取z轴一个合适的网格大小
   zUnit = getApproximateGridSize(maxDepth, zGridNum, factorArray);
   maxDepth = fMul(zGridNum, zUnit);
 
@@ -225,7 +226,6 @@ function initSpatialTrack() {
       line.computeLineDistances();
       scene.add(line);
     }
-
     useFont(function (font) {
       var fontSize = xyUnit * fontSizeToUnitRatio;
       var fontHeight = xyUnit / 20;
@@ -534,7 +534,7 @@ function initHorizontalProjection() {
       scene.add(line);
     }
     // 靶点
-    var text = "+";
+    var text = "x";
     var segments = 64;// 把圆分成线段的数目;
     var fontHeight = xyUnit / 20;
     var fontSize = xyUnit * fontSizeToUnitRatio;
@@ -564,7 +564,7 @@ function initHorizontalProjection() {
         var x = trackPoints[i+1].x + (trackPoints[i].x - trackPoints[i+1].x) * ratio;
         var y = trackPoints[i+1].y + (trackPoints[i].y - trackPoints[i+1].y) * ratio;
         if (Math.sqrt(Math.pow(x - p.x, 2) + Math.pow(y - p.y, 2)) <= p.r) {
-          // 用+绘制交叉点
+          // 用x绘制交叉点
           useFont(function (font) {
             var textGeometry = new THREE.TextGeometry(text, {
               font: font,
@@ -584,10 +584,7 @@ function initHorizontalProjection() {
     useFont(function (font) {
       var fontSize = xyUnit * fontSizeToUnitRatio;
       var fontHeight = xyUnit / 20;
-      var textMaterial = new THREE.MeshBasicMaterial({
-        color: fontColor,
-        side: THREE.DoubleSide
-      });
+      var textMaterial = new THREE.MeshBasicMaterial({color: fontColor});
       // x轴上的刻度
       for (var i = 0; i <= (xRange.max - xRange.min) / xyUnit; i++) {
         var text = fAdd(xRange.min, fMul(xyUnit, i)).toString();
@@ -657,16 +654,19 @@ function initVerticalProjection() {
   var gridNum = 10, fontSizeToUnitRatio = .3;
   var hAxisColor = "#ff0000", vAxisColor = "#00ff00", fontColor = baseColor;
   var trackLineColor = "#cf52a3", kopLineColor = "#aa6973", targetCircleColor = "#0572b8";
+  var directionLabelColor = "#ab4977";
   var hTracks = hTrackPoints;
   var hTargets = hTargetPoints;
+  var directionTxt = directionText;
   // 设置从配置文件中自定义的一些参数
   if (config) {
     gridNum = config.gridNum || gridNum;
-    hAxisColor = config.xAxisColor || hAxisColor;
+    hAxisColor = config.hAxisColor || hAxisColor;
     vAxisColor = config.depthAxisColor || vAxisColor;
     fontColor = config.fontColor || fontColor;
     fontSizeToUnitRatio = config.fontSizeToUnitRatio || fontSizeToUnitRatio;
     trackLineColor = config.trackLineColor || trackLineColor;
+    directionLabelColor = config.directionLabelColor || directionLabelColor;
   }
   var xAxisMaterial = new THREE.LineBasicMaterial({color: hAxisColor});
   var yAxisMaterial = new THREE.LineBasicMaterial({color: vAxisColor});
@@ -773,12 +773,10 @@ function initVerticalProjection() {
         scene.add(targetCircle);
       });
     }
+    var textMaterial = new THREE.MeshBasicMaterial({color: fontColor});
+    var fontSize = gridUnit * fontSizeToUnitRatio;
+    var fontHeight = gridUnit / 20;
     useFont(function (font) {
-      var fontSize = gridUnit * fontSizeToUnitRatio;
-      var fontHeight = gridUnit / 20;
-      var textMaterial = new THREE.MeshBasicMaterial({
-        color: fontColor,
-      });
       // x轴上的刻度
       for (var i = 0; i <= (hRange.max - hRange.min) / gridUnit; i++) {
         var text = fAdd(hRange.min, fMul(gridUnit, i)).toString();
@@ -797,7 +795,7 @@ function initVerticalProjection() {
       }
       // y轴上的刻度
       for (var i = 0; i <= (vRange.max - vRange.min) / gridUnit; i++) {
-        var text = fAdd(vRange.min, fMul(gridUnit, i)).toString();
+        var text = yToDepth(fAdd(vRange.min, fMul(gridUnit, i))).toString();
         if (text === '0') continue;
         var textGeometry = new THREE.TextGeometry(text, {
           font: font,
@@ -811,6 +809,34 @@ function initVerticalProjection() {
         mesh.position.z = -fontHeight / 2;
         scene.add(mesh);
       }
+    });
+    // 方向箭头
+    var arrowMaterial = new THREE.MeshBasicMaterial({color: directionLabelColor, side: THREE.DoubleSide});
+    var arrowWidth = gridUnit / 2, arrowHeight = gridUnit / 3;
+    var startX = hRange.max + gridUnit / 3, startY = vRange.max - gridUnit / 2 + arrowHeight / 2;
+    var shape = new THREE.Shape();
+    shape.moveTo(startX, startY);
+    shape.lineTo(startX + arrowWidth / 4,startY - arrowHeight / 2);
+    shape.lineTo(startX, startY - arrowHeight);
+    shape.lineTo(startX + arrowWidth, startY - arrowHeight / 2);
+    shape.lineTo(startX, startY);
+    geometry = new THREE.ShapeGeometry(shape);
+    var arrow = new THREE.Mesh(geometry, arrowMaterial);
+    scene.add(arrow);
+    useFont(function (font) {
+      // 方向标识
+      var text = directionTxt;
+      var textGeometry = new THREE.TextGeometry(text, {
+        font: font,
+        size: fontSize,
+        height: fontHeight
+      });
+      var mesh = new THREE.Mesh(textGeometry, textMaterial);
+      var box = new THREE.Box3().setFromObject(mesh)
+      mesh.position.x = startX + arrowWidth / 2 - (box.max.x - box.min.x) / 2;
+      mesh.position.y = startY - arrowHeight - fontSize * 1.5;
+      mesh.position.z = -fontHeight / 2;
+      scene.add(mesh);
     });
   }
   var graphObj = new CanvasGraph(buildVerticalProjectionEW, {
@@ -826,12 +852,13 @@ function initVerticalProjection() {
   }
 }
 
-var canvasId, config, hTargetPoints, hTrackPoints;
+var canvasId, config, hTargetPoints, hTrackPoints, directionText;
 function initVerticalProjectionEW() {
   canvasId = 'verticalProjectionEW';
   config = configObj && configObj.verticalProjectionEW;
   hTargetPoints = targetPoints.map(function(p) {return p.x}); // 靶点的横轴坐标
   hTrackPoints = xs; // 轨迹点的横轴坐标
+  directionText = "E";
   initVerticalProjection();
 }
 
@@ -840,6 +867,7 @@ function initVerticalProjectionNS() {
   config = configObj && configObj.verticalProjectionNS;
   hTargetPoints = targetPoints.map(function(p) {return p.y}); // 靶点的横轴坐标
   hTrackPoints = ys; // 轨迹点的横轴坐标
+  directionText = "N";
   initVerticalProjection();
 }
 
@@ -958,17 +986,17 @@ function fetchTargetPoints() {
 
 // 获取轨迹点数据
 function fetchTrackPoints() {
-  // var trackPointDataURL = configObj.trackPointDataURL;
-  // var xhr = new XMLHttpRequest();
-  // xhr.open("GET", trackPointDataURL);
-  // xhr.onreadystatechange = function () {
-  //   if (xhr.readyState === 4) {
-  //     if (xhr.status === 200) {
-  //       try {
-  //         trackPoints = JSON5.parse(xhr.responseText);
-  //       } catch (e) {
-  //         triggerInitError("轨迹点数据不是一个有效的对象!");
-  //       }
+  var trackPointDataURL = configObj.trackPointDataURL;
+  var xhr = new XMLHttpRequest();
+  xhr.open("GET", trackPointDataURL);
+  xhr.onreadystatechange = function () {
+    if (xhr.readyState === 4) {
+      if (xhr.status === 200) {
+        try {
+          trackPoints = JSON5.parse(xhr.responseText);
+        } catch (e) {
+          triggerInitError("轨迹点数据不是一个有效的对象!");
+        }
         // 设置造斜点
         if (trackPoints[0] && trackPoints[0].zxd) {
           kop = parseFloat(trackPoints[0].zxd);
@@ -994,14 +1022,14 @@ function fetchTrackPoints() {
         // x,y坐标中绝对值最大的数
         xyFarthest = Math.max(Math.abs(Math.max.apply(null, xs)), Math.abs(Math.min.apply(null, xs)),
             Math.abs(Math.max.apply(null, ys)), Math.abs(Math.min.apply(null, ys)));
-      // } else {
-      //   triggerInitError("加载轨迹点数据失败!");
-      // }
-      // fetchTargetPoints();
-      initGraph();
-    // }
-  // };
-  // xhr.send();
+      } else {
+        triggerInitError("加载轨迹点数据失败!");
+      }
+      fetchTargetPoints();
+      // initGraph();
+    }
+  };
+  xhr.send();
 }
 
 // 加载配置文件
@@ -1014,10 +1042,10 @@ function loadConfigFile() {
         try {
           configObj = JSON5.parse(xhr.responseText);
         } catch (e) {
-          triggerInitError("配置对象不是一个有效的对象!");
+          console.error("配置对象不是一个有效的对象!");
         }
       } else {
-        triggerInitError("配置文件加载失败,请检查配置文件的位置!");
+        console.error("配置文件加载失败,请检查配置文件的位置!")
       }
       fetchTrackPoints();
     }
@@ -1126,7 +1154,7 @@ function CanvasGraph(init, config) {
 // js中的浮点数运算存在误差,必要时使用下面的函数替代
 // 浮点数乘法
 function fMul(a, b) {
-  var m = 0, n = 0, d = a + "", e = b + "";
+  var m, n, d = a + "", e = b + "";
   m = d.split(".")[1] ? d.split(".")[1].length : 0;
   n = e.split(".")[1] ? e.split(".")[1].length : 0;
   var maxInt = Math.pow(10, m + n); //将数字转换为整数的最大倍数
@@ -1135,7 +1163,7 @@ function fMul(a, b) {
 
 // 浮点数加法
 function fAdd(a, b) {
-  var m = 0, n = 0, d = a + "", e = b + "";
+  var m, n, d = a + "", e = b + "";
   m = d.split(".")[1] ? d.split(".")[1].length : 0;
   n = e.split(".")[1] ? e.split(".")[1].length : 0;
   var maxInt = Math.pow(10, Math.max(m, n)); //将数字转换为整数的最大倍数
@@ -1144,7 +1172,7 @@ function fAdd(a, b) {
 
 // 浮点数减法
 function fSub(a, b) {
-  var m = 0, n = 0, d = a + "", e = b + "";
+  var m, n, d = a + "", e = b + "";
   m = d.split(".")[1] ? d.split(".")[1].length : 0;
   n = e.split(".")[1] ? e.split(".")[1].length : 0;
   var maxInt = Math.pow(10, Math.max(m, n)); //将数字转换为整数的最大倍数
@@ -1153,7 +1181,7 @@ function fSub(a, b) {
 
 // 浮点数除法
 function fDivision(a, b) {
-  var m = 0, n = 0, d = a + "", e = b + "";
+  var m, n, d = a + "", e = b + "";
   m = d.split(".")[1] ? d.split(".")[1].length : 0;
   n = e.split(".")[1] ? e.split(".")[1].length : 0;
   var maxInt = Math.pow(10, Math.max(n, m)); //将数字转换为整数的最大倍数
