@@ -5,8 +5,7 @@ window.addEventListener("load", function () {
   // 选择不同的图
   var selects = document.getElementsByName("typeSel");
   for (var i = 0; i < selects.length; i++) {
-    var ele = selects[i];
-    ele.addEventListener("change", function () {
+    selects[i].addEventListener("change", function () {
       curGraph && curGraph.hide();
       var candidate;
       if (this.value === "spatial") {
@@ -36,22 +35,42 @@ window.addEventListener("load", function () {
       curGraph.export();
     }
   });
+  // 展开和收起页头的菜单
+  var burger = document.getElementById('head-burger');
+  burger && burger.addEventListener("click", function () {
+    burger.classList.toggle("is-active");
+    var menu = document.getElementById("head-menu");
+    menu && menu.classList.toggle("is-active");
+  });
+  // 切换实钻线和设计钻线
+  var selectLineType = document.querySelectorAll("#select-line-type input[type='checkbox']");
+  for (var i = 0; i < selectLineType.length; i++) {
+    selectLineType[i].addEventListener("change", function () {
+      if (this.id === "check-design-line") {
+        curGraph.setDesignDrillingLine(this.checked);
+      } else if (this.id === "check-real-line") {
+        curGraph.setRealDrillingLine(this.checked);
+      }
+    });
+  }
 });
 
 // 公共变量
-var kop; // 造斜点的深度
+var realKop; // 实钻造斜点的深度
+var designKop; // 设计钻线的深度
+var defaultTargetRadius = 0; // 默认的靶半径
 var vViewAngle = 45; // 摄像机垂直方向的视野角度
-var geometry, configObj;
+var geometry, configObj, externalDataFetch;
 // xy坐标平面大小
 // x,y坐标中绝对值最大的数
-var xyFarthest, xs, ys, depths;
+var xyFarthest, realXs, designXs, realYs, designYs, realDepths, designDepths;
 var curGraph; // 当前页面显示的图像
 var spatialTrack, verticalProjectionEW, horizontalProjection, verticalProjectionNS;
 var fontPath = './font/optimer_regular.typeface.json';
-var configPath = './config.json';
+var configPath = 'config.json';
 var baseColor = "#000000";
 var factorArray = [10000, 1000, 100, 10, 1, 0.1, 0.01, 0.001, 0.0001, 0.00001, 0.000001];
-var trackPoints = [{
+var realTrackPoints = [{
   dxpy: 25.64,
   nbpy: 32.05,
   cs: 105,
@@ -69,7 +88,7 @@ var trackPoints = [{
   nbpy: 72,
   cs: 605
 }];
-var targetPoints = [{
+var realTargetPoints = [{
   yzb: 44,
   jkhzby: 0,
   xzb: 70,
@@ -77,6 +96,8 @@ var targetPoints = [{
   csb: 400,
   ybbqbj: 50
 }];
+var designTargetPoints = [];
+var designTrackPoints = [];
 var material = new THREE.LineBasicMaterial({color: baseColor});
 
 // 使用FontLoader加载的字体,接受一个回调函数
@@ -111,10 +132,11 @@ var useFont = (function () {
 })();
 
 function initSpatialTrack() {
-  var autoRotate = true;
+  var autoRotate = true, realDrillLines, designDrillLines;
   var xyGridNum = 10, zGridNum = 10, maxZToXyRatio = 2, fontSizeToUnitRatio = .3, xyUnit, zUnit;
-  var xAxisColor = "#ff0000", yAxisColor = "#00ff00", zAxisColor = "#0000ff", verticalLineColor = "#35a066";
-  var fontColor = baseColor, trackLineColor = baseColor, projectionLineColor = baseColor;
+  var xAxisColor = "#ff0000", yAxisColor = "#00ff00", zAxisColor = "#0000ff", realVerticalLineColor = "#35a066";
+  var designVerticalLineColor = "#db0ef4", designTrackLineColor = "#f2e122", designProjectionLineColor = "#1ecd2c";
+  var fontColor = baseColor, realTrackLineColor = baseColor, realProjectionLineColor = baseColor;
   // 设置从配置文件中自定义的一些参数
   if (configObj && configObj.spatialTrack) {
     var config = configObj.spatialTrack;
@@ -125,9 +147,12 @@ function initSpatialTrack() {
     zAxisColor = config.zAxisColor || zAxisColor;
     fontColor = config.fontColor || fontColor;
     maxZToXyRatio = config.maxZToXyRatio || maxZToXyRatio;
-    verticalLineColor = config.verticalLineColor || verticalLineColor;
-    trackLineColor = config.trackLineColor || trackLineColor;
-    projectionLineColor = config.projectionLineColor || projectionLineColor;
+    realVerticalLineColor = config.realVerticalLineColor || realVerticalLineColor;
+    realTrackLineColor = config.realTrackLineColor || realTrackLineColor;
+    realProjectionLineColor = config.realProjectionLineColor || realProjectionLineColor;
+    designVerticalLineColor = config.designVerticalLineColor || designVerticalLineColor;
+    designTrackLineColor = config.designTrackLineColor || designTrackLineColor;
+    designProjectionLineColor = config.designProjectionLineColor || designProjectionLineColor;
     fontSizeToUnitRatio = config.fontSizeToUnitRatio || fontSizeToUnitRatio;
     if (typeof config.autoRotate === "boolean") {
       autoRotate = config.autoRotate;
@@ -136,9 +161,12 @@ function initSpatialTrack() {
   var xAxisMaterial = new THREE.LineBasicMaterial({color: xAxisColor, side: THREE.DoubleSide});
   var yAxisMaterial = new THREE.LineBasicMaterial({color: yAxisColor, side: THREE.DoubleSide});
   var zAxisMaterial = new THREE.LineBasicMaterial({color: zAxisColor, side: THREE.DoubleSide});
-  var trackLineMaterial = new THREE.LineBasicMaterial({color: trackLineColor, side: THREE.DoubleSide});
-  var projectionLineMaterial = new THREE.LineBasicMaterial({color: projectionLineColor, side: THREE.DoubleSide});
-  var maxDepth = Math.max.apply(null, depths); // 最大深度
+  var realTrackLineMaterial = new THREE.LineBasicMaterial({color: realTrackLineColor, side: THREE.DoubleSide});
+  var realProjectionLineMaterial = new THREE.LineBasicMaterial({color: realProjectionLineColor, side: THREE.DoubleSide});
+  var designTrackLineMaterial = new THREE.LineBasicMaterial({color: designTrackLineColor, side: THREE.DoubleSide});
+  var designProjectionLineMaterial = new THREE.LineBasicMaterial({color: designProjectionLineColor, side: THREE.DoubleSide});
+  // 设计钻线和实钻线的最大深度
+  var maxDepth = Math.max.apply(null, realDepths.concat(designDepths)); // 最大深度
 
   var _xyFarthest = xyFarthest;
   if (maxDepth / xyFarthest > maxZToXyRatio) {
@@ -156,7 +184,6 @@ function initSpatialTrack() {
   var depthToZ = function (depth) { return fSub(maxDepth, depth) };
   // 将z轴上的坐标转换为深度
   var zToDepth = function (z) { return fSub(maxDepth, z) };
-  var zs = depths.map(function (d) { return depthToZ(d) });
   var xRange = {min: -_xyFarthest, max: _xyFarthest}; // x坐标轴的范围
   var yRange = {min: -_xyFarthest, max: _xyFarthest}; // y坐标轴的范围
   var zRange = { // z坐标轴的范围
@@ -165,11 +192,17 @@ function initSpatialTrack() {
   }
   var smallestDashNum = 10; // 在最短的垂线(虚线)上显示的虚线段的数目
   var gapRatio = 1 / 3; // 间隙占虚线端的比例
-  var altitudeZ = maxDepth - Math.max.apply(null, depths); // 深度最大的点距离xoy平面的垂直距离
-  var verticalLineMaterial = new THREE.LineDashedMaterial({
-    color: verticalLineColor,
-    dashSize: (altitudeZ / smallestDashNum) * (1 - gapRatio),
-    gapSize: (altitudeZ / smallestDashNum) * gapRatio,
+  var realAltitudeZ = maxDepth - Math.max.apply(null, realDepths); // 深度最大的点距离xoy平面的垂直距离
+  var realVerticalLineMaterial = new THREE.LineDashedMaterial({
+    color: realVerticalLineColor,
+    dashSize: (realAltitudeZ / smallestDashNum) * (1 - gapRatio),
+    gapSize: (realAltitudeZ / smallestDashNum) * gapRatio,
+  });
+  var designAltitudeZ = maxDepth - Math.max.apply(null, designDepths); // 深度最大的点距离xoy平面的垂直距离
+  var designVerticalLineMaterial = new THREE.LineDashedMaterial({
+    color: designVerticalLineColor,
+    dashSize: (designAltitudeZ / smallestDashNum) * (1 - gapRatio),
+    gapSize: (designAltitudeZ / smallestDashNum) * gapRatio,
   });
   var arrowWidth = xyUnit / 2, arrowHeight = xyUnit; // 坐标轴箭头的底部宽度和高度,以箭头向上指为准,箭头为平面箭头
   var canvas = document.getElementById("spatialTrack");
@@ -200,32 +233,72 @@ function initSpatialTrack() {
   controls.autoRotate = autoRotate;
 
   function buildSpatialTrack() {
+    // 实钻线
+    realDrillLines = new THREE.Group();
     // 轨迹点
-    var points = trackPoints.map(function (p) {
+    var points = realTrackPoints.map(function (p) {
       return new THREE.Vector3(p.x, p.y, depthToZ(p.depth));
     });
     geometry = new THREE.BufferGeometry().setFromPoints(points);
-    var trackLine = new THREE.Line(geometry, trackLineMaterial);
-    scene.add(trackLine);
+    var trackLine = new THREE.Line(geometry, realTrackLineMaterial);
+    realDrillLines.add(trackLine);
     // 在xoy平面上的投影线
-    var points = trackPoints.map(function (p) {
+    var points = realTrackPoints.map(function (p) {
       return new THREE.Vector3(p.x, p.y, 0);
     });
     geometry = new THREE.BufferGeometry().setFromPoints(points);
-    var projectionLine = new THREE.Line(geometry, projectionLineMaterial);
-    scene.add(projectionLine);
+    var projectionLine = new THREE.Line(geometry, realProjectionLineMaterial);
+    realDrillLines.add(projectionLine);
+    spatialTrack.realDrillLine = realDrillLines;
+
+    var verticalLineGroup = new THREE.Group();
     // 垂线
-    for (var i = 0; i < trackPoints.length; i++) {
+    for (var i = 0; i < realTrackPoints.length; i++) {
       var points = [];
-      var point = trackPoints[i];
+      var point = realTrackPoints[i];
       points.push(new THREE.Vector3(point.x, point.y, depthToZ(point.depth)));
       points.push(new THREE.Vector3(point.x, point.y, 0));
       geometry = new THREE.BufferGeometry().setFromPoints(points);
-      var line = new THREE.Line(geometry, verticalLineMaterial);
+      var line = new THREE.Line(geometry, realVerticalLineMaterial);
       // 如果要绘制虚线则需要调用此函数
       line.computeLineDistances();
-      scene.add(line);
+      verticalLineGroup.add(line);
     }
+    realDrillLines.add(verticalLineGroup);
+    scene.add(realDrillLines);
+    // 设计钻线
+    designDrillLines = new THREE.Group();
+    // 轨迹点
+    var points = designTrackPoints.map(function (p) {
+      return new THREE.Vector3(p.x, p.y, depthToZ(p.depth));
+    });
+    geometry = new THREE.BufferGeometry().setFromPoints(points);
+    var trackLine = new THREE.Line(geometry, designTrackLineMaterial);
+    designDrillLines.add(trackLine);
+    // 在xoy平面上的投影线
+    var points = designTrackPoints.map(function (p) {
+      return new THREE.Vector3(p.x, p.y, 0);
+    });
+    geometry = new THREE.BufferGeometry().setFromPoints(points);
+    var projectionLine = new THREE.Line(geometry, designProjectionLineMaterial);
+    designDrillLines.add(projectionLine);
+    var verticalLineGroup = new THREE.Group();
+    // 垂线
+    for (var i = 0; i < designTrackPoints.length; i++) {
+      var points = [];
+      var point = designTrackPoints[i];
+      points.push(new THREE.Vector3(point.x, point.y, depthToZ(point.depth)));
+      points.push(new THREE.Vector3(point.x, point.y, 0));
+      geometry = new THREE.BufferGeometry().setFromPoints(points);
+      var line = new THREE.Line(geometry, designVerticalLineMaterial);
+      // 如果要绘制虚线则需要调用此函数
+      line.computeLineDistances();
+      verticalLineGroup.add(line);
+    }
+    designDrillLines.add(verticalLineGroup);
+    scene.add(designDrillLines);
+    spatialTrack.designDrillLine = designDrillLines;
+
     useFont(function (font) {
       var fontSize = xyUnit * fontSizeToUnitRatio;
       var fontHeight = xyUnit / 20;
@@ -388,7 +461,7 @@ function initSpatialTrack() {
     renderer: renderer,
     scene: scene,
     camera: camera,
-    controls: controls
+    controls: controls,
   });
   canvas.addEventListener("click", function () {
     controls.autoRotate = false;
@@ -424,16 +497,16 @@ function initHorizontalProjection() {
   xyUnit = gridSize;
 
   // 寻找上下左右四个方向的边界
-  var left = Math.min.apply(null, xs.concat(targetPoints.map(function (p) {
+  var left = Math.min.apply(null, realXs.concat(realTargetPoints.map(function (p) {
     return p.x - p.r; // 靶圈的左边界
   })));
-  var bottom = Math.min.apply(null, ys.concat(targetPoints.map(function (p) {
+  var bottom = Math.min.apply(null, realYs.concat(realTargetPoints.map(function (p) {
     return p.y - p.r; // 靶圈的下边界
   })));
-  var top = Math.max.apply(null, ys.concat(targetPoints.map(function (p) {
+  var top = Math.max.apply(null, realYs.concat(realTargetPoints.map(function (p) {
     return p.y + p.r; // 靶圈的上边界
   })));
-  var right = Math.max.apply(null, xs.concat(targetPoints.map(function (p) {
+  var right = Math.max.apply(null, realXs.concat(realTargetPoints.map(function (p) {
     return p.x + p.r; // 靶圈的右边界
   })));
   left = left >= 0 ? 0 : -fMul(Math.ceil(fDivision(-left, xyUnit)), xyUnit);
@@ -491,7 +564,7 @@ function initHorizontalProjection() {
 
   function buildHorizontalProjection() {
     // 轨迹点
-    var points = trackPoints.map(function (p) {
+    var points = realTrackPoints.map(function (p) {
       return new THREE.Vector3(p.x, p.y, 0);
     });
     geometry = new THREE.BufferGeometry().setFromPoints(points);
@@ -541,7 +614,7 @@ function initHorizontalProjection() {
     var textMaterial = new THREE.MeshBasicMaterial({color: fontColor, side: THREE.DoubleSide});
     var targetCenterMaterial = new THREE.PointsMaterial({color: baseColor, size: xyUnit / 5});
     var targetCircleMaterial = new THREE.LineBasicMaterial({color: baseColor});
-    targetPoints.forEach(function (p) {
+    realTargetPoints.forEach(function (p) {
       // 靶心
       var geometry = new THREE.BufferGeometry();
       geometry.setAttribute('position', new THREE.Float32BufferAttribute([p.x, p.y, 0], 3));
@@ -557,12 +630,12 @@ function initHorizontalProjection() {
       var circle = new THREE.Line(geometry, targetCircleMaterial);
       scene.add(circle);
       // 计算靶圈和轨迹曲线的相交点
-      for (var i = 0; i < trackPoints.length - 1; i++) {
-        if (p.depth < trackPoints[i].depth || p.depth > trackPoints[i + 1].depth)
+      for (var i = 0; i < realTrackPoints.length - 1; i++) {
+        if (p.depth < realTrackPoints[i].depth || p.depth > realTrackPoints[i + 1].depth)
           continue;
-        var ratio = (p.depth - trackPoints[i+1].depth) / (trackPoints[i].depth - trackPoints[i+1].depth);
-        var x = trackPoints[i+1].x + (trackPoints[i].x - trackPoints[i+1].x) * ratio;
-        var y = trackPoints[i+1].y + (trackPoints[i].y - trackPoints[i+1].y) * ratio;
+        var ratio = (p.depth - realTrackPoints[i+1].depth) / (realTrackPoints[i].depth - realTrackPoints[i+1].depth);
+        var x = realTrackPoints[i+1].x + (realTrackPoints[i].x - realTrackPoints[i+1].x) * ratio;
+        var y = realTrackPoints[i+1].y + (realTrackPoints[i].y - realTrackPoints[i+1].y) * ratio;
         if (Math.sqrt(Math.pow(x - p.x, 2) + Math.pow(y - p.y, 2)) <= p.r) {
           // 用x绘制交叉点
           useFont(function (font) {
@@ -672,7 +745,7 @@ function initVerticalProjection() {
   var yAxisMaterial = new THREE.LineBasicMaterial({color: vAxisColor});
   var trackLineMaterial = new THREE.LineBasicMaterial({color: trackLineColor});
   // 获取一个合适的网格大小,xoy平面
-  var farthest = Math.max(Math.max.apply(null, depths), Math.abs(Math.max.apply(null, hTracks)), Math.abs(Math.min.apply(null, hTracks)));
+  var farthest = Math.max(Math.max.apply(null, realDepths), Math.abs(Math.max.apply(null, hTracks)), Math.abs(Math.min.apply(null, hTracks)));
   var gridUnit = getApproximateGridSize(farthest, gridNum, factorArray);
   var depthToY = function(depth) {return -depth};
   var yToDepth = function(y) {return -y};
@@ -745,26 +818,26 @@ function initVerticalProjection() {
     var yAxis = new THREE.Line(geometry, yAxisMaterial);
     scene.add(yAxis);
     // 轨迹点
-    var points = trackPoints.map(function (p,i) {
+    var points = realTrackPoints.map(function (p, i) {
       return new THREE.Vector3(hTracks[i], depthToY(p.depth), 0);
     });
     geometry = new THREE.BufferGeometry().setFromPoints(points);
     var trackLine = new THREE.Line(geometry, trackLineMaterial);
     scene.add(trackLine);
     // 造斜点
-    if (kop) {
+    if (realKop) {
       var points = [];
-      points.push(new THREE.Vector3(-gridUnit / 5, depthToY(kop), 0));
-      points.push(new THREE.Vector3(gridUnit / 5, depthToY(kop), 0));
+      points.push(new THREE.Vector3(-gridUnit / 5, depthToY(realKop), 0));
+      points.push(new THREE.Vector3(gridUnit / 5, depthToY(realKop), 0));
       var kopLineMaterial = new THREE.LineBasicMaterial({color: kopLineColor});
       geometry = new THREE.BufferGeometry().setFromPoints(points);
       var kopLine = new THREE.Line(geometry, kopLineMaterial);
       scene.add(kopLine);
     }
     // 靶圈的投影
-    if (targetPoints.length > 0) {
+    if (realTargetPoints.length > 0) {
       var targetCircleMaterial = new THREE.LineBasicMaterial({color: targetCircleColor});
-      targetPoints.forEach(function(p, i) {
+      realTargetPoints.forEach(function(p, i) {
         var points = [];
         points.push(new THREE.Vector3(hTargets[i] - p.r, depthToY(p.depth), 0));
         points.push(new THREE.Vector3(hTargets[i] + p.r, depthToY(p.depth), 0));
@@ -856,8 +929,8 @@ var canvasId, config, hTargetPoints, hTrackPoints, directionText;
 function initVerticalProjectionEW() {
   canvasId = 'verticalProjectionEW';
   config = configObj && configObj.verticalProjectionEW;
-  hTargetPoints = targetPoints.map(function(p) {return p.x}); // 靶点的横轴坐标
-  hTrackPoints = xs; // 轨迹点的横轴坐标
+  hTargetPoints = realTargetPoints.map(function(p) {return p.x}); // 靶点的横轴坐标
+  hTrackPoints = realXs; // 轨迹点的横轴坐标
   directionText = "E";
   initVerticalProjection();
 }
@@ -865,8 +938,8 @@ function initVerticalProjectionEW() {
 function initVerticalProjectionNS() {
   canvasId = 'verticalProjectionNS';
   config = configObj && configObj.verticalProjectionNS;
-  hTargetPoints = targetPoints.map(function(p) {return p.y}); // 靶点的横轴坐标
-  hTrackPoints = ys; // 轨迹点的横轴坐标
+  hTargetPoints = realTargetPoints.map(function(p) {return p.y}); // 靶点的横轴坐标
+  hTrackPoints = realYs; // 轨迹点的横轴坐标
   directionText = "N";
   initVerticalProjection();
 }
@@ -936,8 +1009,13 @@ function triggerInitError(text) {
 }
 
 function init() {
-  // 加载配置文件
-  loadConfigFile();
+  loadConfigFile()
+      .then(fetchRealTrackPoints)
+      .then(fetchRealTargetPoints)
+      .then(fetchDesignTrackPoints)
+      .then(fetchDesignTargetPoints)
+      .then(dataProcess)
+      .then(initGraph);
 }
 
 function initGraph() {
@@ -950,107 +1028,163 @@ function initGraph() {
   postDrawFinished();
 }
 
-// 获取靶点数据
-function fetchTargetPoints() {
-  var targetPointsDataURL = configObj.targetPointsDataURL;
-  var xhr = new XMLHttpRequest();
-  xhr.open("GET", targetPointsDataURL);
-  xhr.onreadystatechange = function () {
-    if (xhr.readyState === 4) {
-      if (xhr.status === 200) {
-        try {
-          var defaultTargetRadius = 0;
-          if (configObj && configObj.defaultTargetRadius) {
-            defaultTargetRadius = configObj.defaultTargetRadius;
-          }
-          targetPoints = JSON5.parse(xhr.responseText);
-          targetPoints = targetPoints.map(function (p) {
-            return {
-              y: (p.xzb - p.jkzzbx),
-              x: (p.yzb - p.jkhzby),
-              depth: p.csb,
-              r: p.ybbqbj === null ? defaultTargetRadius : p.ybbqbj
-            }
-          });
-        } catch (e) {
-          triggerInitError("靶点数据不是一个有效的对象!");
-        }
-      } else {
-        triggerInitError("靶点数据加载失败!");
-      }
-      initGraph();
-    }
-  }
-  xhr.send();
+// 计算一些必要的变量
+function dataProcess() {
+  return new Promise(function (resolve) {
+    realXs = realTrackPoints.map(function (p) { return p.x });
+    designXs = designTrackPoints.map(function (p) { return p.x });
+    realYs = realTrackPoints.map(function (p) { return p.y });
+    designYs = designTrackPoints.map(function (p) { return p.y });
+    // 实钻线的深度数据
+    realDepths = realTrackPoints.map(function (p) { return p.depth });
+    // 设计钻线的深度数据
+    designDepths = designTrackPoints.map(function (p) { return p.depth });
+    // xy坐标平面大小
+    // x,y坐标中绝对值最大的数
+    xyFarthest = Math.max(Math.abs(Math.max.apply(null, realXs)), Math.abs(Math.min.apply(null, realXs)),
+        Math.abs(Math.max.apply(null, realYs)), Math.abs(Math.min.apply(null, realYs)),
+        Math.abs(Math.max.apply(null, designXs)), Math.abs(Math.min.apply(null, designXs)),
+        Math.abs(Math.max.apply(null, designYs)), Math.abs(Math.min.apply(null, designYs)));
+    resolve();
+  });
 }
 
-// 获取轨迹点数据
-function fetchTrackPoints() {
-  var trackPointDataURL = configObj.trackPointDataURL;
-  var xhr = new XMLHttpRequest();
-  xhr.open("GET", trackPointDataURL);
-  xhr.onreadystatechange = function () {
-    if (xhr.readyState === 4) {
-      if (xhr.status === 200) {
-        try {
-          trackPoints = JSON5.parse(xhr.responseText);
-        } catch (e) {
-          triggerInitError("轨迹点数据不是一个有效的对象!");
-        }
-        // 设置造斜点
-        if (trackPoints[0] && trackPoints[0].zxd) {
-          kop = parseFloat(trackPoints[0].zxd);
-        }
-        trackPoints = trackPoints.map(function (p) {
-          return {
-            x: parseFloat(p.dxpy),
-            y: parseFloat(p.nbpy),
-            depth: parseFloat(p.cs)
-          }
-        });
-        xs = trackPoints.map(function (p) {
-          return p.x
-        });
-        ys = trackPoints.map(function (p) {
-          return p.y
-        });
-        // 深度数据,>=0
-        depths = trackPoints.map(function (p) {
-          return p.depth
-        });
-        // xy坐标平面大小
-        // x,y坐标中绝对值最大的数
-        xyFarthest = Math.max(Math.abs(Math.max.apply(null, xs)), Math.abs(Math.min.apply(null, xs)),
-            Math.abs(Math.max.apply(null, ys)), Math.abs(Math.min.apply(null, ys)));
-      } else {
-        triggerInitError("加载轨迹点数据失败!");
+// 获取实钻靶点数据
+function fetchRealTargetPoints() {
+  return new Promise(function (resolve) {
+    var defaultWellNO = configObj.defaultWellNO;
+    externalDataFetch.get("/api/jxjs/getBd", {
+      params: {jhdm: defaultWellNO}
+    }).then(function (res) {
+      try {
+        realTargetPoints = res.data;
+      } catch (e) {
+        triggerInitError("靶点数据不是一个有效的对象!");
       }
-      fetchTargetPoints();
-      // initGraph();
-    }
-  };
-  xhr.send();
+      realTargetPoints = parseTargetPointsData(realTargetPoints);
+      resolve();
+    }).catch(function () {
+      triggerInitError("靶点数据加载失败!");
+    });
+  });
+}
+
+// 获取实钻靶点数据
+function fetchDesignTargetPoints() {
+  return new Promise(function (resolve) {
+    var defaultWellNO = configObj.defaultWellNO;
+    externalDataFetch.get("/api/jxjs/getSjBd", {
+      params: {jhdm: defaultWellNO}
+    }).then(function (res) {
+      try {
+        designTargetPoints = res.data;
+      } catch (e) {
+        triggerInitError("设计靶点数据不是一个有效的对象!");
+      }
+      designTargetPoints = parseTargetPointsData(designTargetPoints);
+      resolve();
+    }).catch(function () {
+      triggerInitError("设计靶点数据加载失败!");
+    });
+  });
+}
+
+// 获取实钻的轨迹点数据
+function fetchRealTrackPoints() {
+  return new Promise(function (resolve) {
+    var defaultWellNO = configObj.defaultWellNO;
+    externalDataFetch.get("api/jxjs/getLxAll",{
+      params: {jhdm: defaultWellNO}
+    }).then(function (res) {
+      try {
+        realTrackPoints = res.data;
+      } catch (e) {
+        triggerInitError("实钻轨迹点数据不是一个有效的对象!");
+      }
+      // 设置造斜点
+      if (realTrackPoints[0] && realTrackPoints[0].zxd) {
+        realKop = parseFloat(realTrackPoints[0].zxd);
+      }
+      realTrackPoints = parseTrackPointsData(realTrackPoints);
+      resolve();
+    }).catch(function () {
+      triggerInitError("加载实钻轨迹点数据失败!");
+    });
+  });
+}
+
+// 获取设计钻井钻的轨迹点数据
+function fetchDesignTrackPoints() {
+  return new Promise(function (resolve) {
+    var defaultWellNO = configObj.defaultWellNO;
+    externalDataFetch.get("/api/jxjs/getSjAll",{
+      params: {jhdm: defaultWellNO}
+    }).then(function (res) {
+      try {
+        designTrackPoints = res.data;
+      } catch (e) {
+        triggerInitError("设计钻线轨迹点数据不是一个有效的对象!");
+      }
+      // 设置造斜点
+      if (designTrackPoints[0] && designTrackPoints[0].zxd) {
+        designKop = parseFloat(designTrackPoints[0].zxd);
+      }
+      designTrackPoints = parseTrackPointsData(designTrackPoints);
+      resolve();
+    }).catch(function () {
+      triggerInitError("加载设计钻线轨迹点数据失败!");
+    });
+  });
 }
 
 // 加载配置文件
 function loadConfigFile() {
-  var xhr = new XMLHttpRequest();
-  xhr.open("GET", configPath);
-  xhr.onreadystatechange = function () {
-    if (xhr.readyState === 4) {
-      if (xhr.status === 200) {
+  return new Promise(function (resolve) {
+    axios.get(configPath, {
+      transformResponse: function (data) {
         try {
-          configObj = JSON5.parse(xhr.responseText);
+          var d = JSON5.parse(data);
         } catch (e) {
           console.error("配置对象不是一个有效的对象!");
         }
-      } else {
-        console.error("配置文件加载失败,请检查配置文件的位置!")
+        return d;
       }
-      fetchTrackPoints();
+    }).then(function (res) {
+      configObj = res.data;
+      externalDataFetch = new axios.create({
+        baseURL: configObj.externalDataBasePath
+      });
+      if (configObj.defaultTargetRadius && configObj.defaultTargetRadius >= 0) {
+        defaultTargetRadius = configObj.defaultTargetRadius;
+      }
+      resolve();
+    }).catch(function (err) {
+      console.error("配置文件加载失败,请检查配置文件的位置!");
+    });
+  });
+}
+
+// 解析靶点数据
+function parseTargetPointsData(points) {
+  return points.map(function (p) {
+    return {
+      y: (p.xzb - p.jkzzbx),
+      x: (p.yzb - p.jkhzby),
+      depth: p.csb,
+      r: p.ybbqbj === null ? defaultTargetRadius : p.ybbqbj
     }
-  };
-  xhr.send();
+  });
+}
+
+// 解析轨迹点数据
+function parseTrackPointsData(points) {
+  return points.map(function (p) {
+    return {
+      x: parseFloat(p.dxpy),
+      y: parseFloat(p.nbpy),
+      depth: parseFloat(p.cs)
+    }
+  });
 }
 
 function CanvasGraph(init, config) {
@@ -1114,6 +1248,18 @@ function CanvasGraph(init, config) {
       link.href = canvas.toDataURL();
       link.click();
       link.remove();
+    }
+  }
+
+  this.setRealDrillingLine = function (state) {
+    if (this.realDrillLine && typeof state === "boolean") {
+      this.realDrillLine.visible = state;
+    }
+  }
+
+  this.setDesignDrillingLine = function (state) {
+    if (this.designDrillLine && typeof state === "boolean") {
+      this.designDrillLine.visible = state;
     }
   }
 

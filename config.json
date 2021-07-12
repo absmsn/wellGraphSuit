@@ -2,6 +2,8 @@
     // 颜色必须是有效的颜色字符串、十六进制类型或rgb格式
     // 形如"red", "#ff0000", "rgb(255, 0, 0)"
     // 获取轨迹点数据的路径
+    "defaultWellNO": "JS2020112001",
+    "externalDataBasePath": "http://10.83.23.53:8089",
     "trackPointDataURL": "http://10.83.23.53:8089/api/jxjs/getLxAll?jhdm=JS2020112001",
     // 获取靶点数据的路径
     "targetPointsDataURL": "http://10.83.23.53:8089/api/jxjs/getBd?jhdm=JS2020112001",
@@ -23,11 +25,11 @@
         // 字的颜色
         "fontColor": "#ab076a",
         // 垂线的颜色
-        "verticalLineColor": "grey",
+        "realVerticalLineColor": "grey",
         // 轨迹线的颜色
-        "trackLineColor": "navy",
+        "realTrackLineColor": "navy",
         // 投影线的颜色
-        "projectionLineColor": "blueviolet",
+        "realProjectionLineColor": "blueviolet",
         // 字体大小与单元格大小的比值
         "fontSizeToUnitRatio": 0.3,
         // 是否开启自动旋转
