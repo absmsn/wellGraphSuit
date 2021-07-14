@@ -2,11 +2,10 @@
     // 颜色必须是有效的颜色字符串、十六进制类型或rgb格式
     // 形如"red", "#ff0000", "rgb(255, 0, 0)"
     // 获取轨迹点数据的路径
+    // 默认井号
     "defaultWellNO": "JS2020112001",
+    "defaultGraphType": "spatialTrack",
     "externalDataBasePath": "http://10.83.23.53:8089",
-    "trackPointDataURL": "http://10.83.23.53:8089/api/jxjs/getLxAll?jhdm=JS2020112001",
-    // 获取靶点数据的路径
-    "targetPointsDataURL": "http://10.83.23.53:8089/api/jxjs/getBd?jhdm=JS2020112001",
     // 默认的靶半径
     "defaultTargetRadius": 40,
     "spatialTrack": {
@@ -23,44 +22,65 @@
         // z轴长度与x、y轴长度的比值
         "maxZToXyRatio": 2,
         // 字的颜色
-        "fontColor": "#ab076a",
+        "fontColor": "purple",
         // 垂线的颜色
-        "realVerticalLineColor": "grey",
+        "realVerticalLineColor": "red",
         // 轨迹线的颜色
-        "realTrackLineColor": "navy",
+        "realTrackLineColor": "red",
         // 投影线的颜色
-        "realProjectionLineColor": "blueviolet",
+        "realProjectionLineColor": "red",
+        // 垂线的颜色
+        "designVerticalLineColor": "green",
+        // 轨迹线的颜色
+        "designTrackLineColor": "green",
+        // 投影线的颜色
+        "designProjectionLineColor": "green",
         // 字体大小与单元格大小的比值
         "fontSizeToUnitRatio": 0.3,
         // 是否开启自动旋转
-        "autoRotate": true
+        "autoRotate": false
     },
     "horizontalProjection": {
         // 在xoy平面上,坐标轴在某个象限上的格子数
-        "xyGridNum": 8,
+        "xyGridNum": 6,
         // x坐标轴的颜色
         "xAxisColor": "#ff0000",
         // y坐标轴的颜色
         "yAxisColor": "#00ff00",
         // 字的颜色
-        "fontColor": "#ab076a",
-        // 轨迹线的颜色
-        "trackLineColor": "navy",
+        "fontColor": "purple",
+        // 实钻线的颜色
+        "realTrackLineColor": "navy",
+        // 设计钻线的颜色
+        "designTrackLineColor": "green",
         // 字体大小与单元格大小的比值
         "fontSizeToUnitRatio": 0.2
     },
     "verticalProjectionEW": {
         "gridNum": 12,
-        "trackLineColor": "#5807df",
+        // 实钻线的颜色
+        "realTrackLineColor": "red",
+        // 设计钻线的颜色
+        "designTrackLineColor": "green",
+        // 字体大小与单元格大小的比值
         "fontSizeToUnitRatio": 0.3,
-        "hAxisColor": "#a6b637",
-        "vAxisColor": "#542a04",
-        "fontColor": "#750299",
+        // 横坐标轴的颜色
+        "hAxisColor": "red",
+        // 纵坐标轴的颜色
+        "vAxisColor": "green",
+        // 字体颜色
+        "fontColor": "purple",
+        // 方向指示器的颜色
         "directionLabelColor": "#30a881"
     },
     "verticalProjectionNS": {
         "gridNum": 12,
-        "trackLineColor": "blue",
-        "fontSizeToUnitRatio": 0.3
+        "hAxisColor": "green",
+        "vAxisColor": "red",
+        "fontColor": "purple",
+        "fontSizeToUnitRatio": 0.3,
+        "realTrackLineColor": "red",
+        "designTrackLineColor": "green",
+        "directionLabelColor": "#30a881"
     }
 }

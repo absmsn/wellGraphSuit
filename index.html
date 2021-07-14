@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>index</title>
+  <title>钻井轨迹图</title>
   <meta name="renderer" content="webkit">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="js/promise-polyfill.min.js" type="application/javascript"></script>
@@ -19,10 +19,10 @@
     <div class="navbar" id="head-container">
       <div id="head-title" class="navbar-brand">
         <div class="navbar-item">
-          <div class="control has-icons-right">
-            <input class="input is-small" type="search" placeholder="请输入井名"/>
-            <span class="icon is-right"><i class="fas fa-check"></i></span>
+          <div class="control" id="well-name-select-area">
+            <input class="input is-small" id="well-name-input" type="search" placeholder="请输入井名"/>
           </div>
+          <div id="well-name-dropdown"></div>
         </div>
         <a role="button" id="head-burger" class="navbar-burger" data-target="head-menu">
           <span aria-hidden="true"></span>
@@ -33,19 +33,19 @@
       <div class="navbar-menu" id="head-menu">
         <div id="type-select-area" class="navbar-start">
           <div class="radio-group navbar-item">
-            <input type="radio" id="spatialTrackSel" name="typeSel" value="spatial" checked />
+            <input type="radio" id="spatialTrackSel" name="typeSel" value="spatialTrack"/>
             <label for="spatialTrackSel">立体空间轨迹图</label>
           </div>
           <div class="radio-group navbar-item">
-            <input type="radio" id="verticalProjectionEWSel" name="typeSel" value="verticalEW" />
+            <input type="radio" id="verticalProjectionEWSel" name="typeSel" value="verticalProjectionEW" />
             <label for="verticalProjectionEWSel">垂直剖面投影图(东西)</label>
           </div>
           <div class="radio-group navbar-item">
-            <input type="radio" id="verticalProjectionNSSel" name="typeSel" value="verticalNS" />
+            <input type="radio" id="verticalProjectionNSSel" name="typeSel" value="verticalProjectionNS" />
             <label for="verticalProjectionNSSel">垂直剖面投影图(南北)</label>
           </div>
           <div class= "radio-group navbar-item">
-            <input type="radio" id="horizontalProjectionSel" name="typeSel" value="horizontal" />
+            <input type="radio" id="horizontalProjectionSel" name="typeSel" value="horizontalProjection" />
             <label for="horizontalProjectionSel">水平位移投影图</label>
           </div>
         </div>
@@ -53,11 +53,11 @@
           <div class="navbar-item" id="select-line-type">
             <div class="h-line-centered">
               <input type="checkbox" id="check-design-line" checked>
-              <label for="check-design-line">设计曲线</label>
+              <label for="check-design-line">设计轨道</label>
             </div>
             <div class="h-line-centered">
               <input type="checkbox" id="check-real-line" checked>
-              <label for="check-real-line">实钻曲线</label>
+              <label for="check-real-line">实钻轨迹</label>
             </div>
           </div>
         </div>
@@ -73,7 +73,6 @@
       </div>
       <div id="loadingText">加载中...</div>
       <canvas id="spatialTrack" style="display: none;"></canvas>
-      <canvas id="verticalProjection" style="display: none;"></canvas>
       <canvas id="horizontalProjection" style="display: none;"></canvas>
       <canvas id="verticalProjectionNS" style="display: none;"></canvas>
       <canvas id="verticalProjectionEW" style="display: none;"></canvas>

@@ -1,3 +1,7 @@
+html {
+    overflow: hidden;
+}
+
 body {
     margin: 0;
     padding: 0;
@@ -51,15 +55,35 @@ body {
     box-shadow: 0 0 10px #cfcfcf;
 }
 
-/*#head-title {*/
-/*    height: 100%;*/
-/*    flex: 0 0 auto;*/
-/*}*/
+#head-menu {
+    flex-shrink: 1;
+}
 
-/*#type-select-area {*/
-/*    display: flex;*/
-/*    flex: 1 1 auto;*/
-/*}*/
+#type-select-area {
+    min-width: 0;
+}
+
+#well-name-select-area {
+    position: relative;
+}
+
+#well-name-dropdown {
+    position: absolute;
+    top: calc(100% - 0.5rem);
+    left: 0.75rem;
+}
+
+#well-name-dropdown .dropdown-content {
+    border: 1px solid #dbdbdb;
+}
+
+#well-name-dropdown .dropdown-item {
+    cursor: pointer;
+}
+
+#well-name-dropdown .dropdown-item:hover {
+    background-color: #f6f6f6;
+}
 
 .mobile-head-btn {
     display: none;
@@ -95,6 +119,8 @@ body {
     margin: 4px 8px;
     border-radius: 8px;
     text-align: center;
+    flex-shrink: 1;
+    min-width: 0;
 }
 
 .radio-group:hover {
@@ -108,48 +134,32 @@ body {
     overflow: hidden;
 }
 
+.radio-group input[type=radio] {
+    margin-right: 6px;
+}
+
 .h-line-centered {
     display: inline-flex;
     align-items: center;
+}
+
+#select-line-type {
+    display: inline-flex;
+    margin: 8px;
+    border-radius: 6px;
+    background-color: aliceblue;
 }
 
 #select-line-type .h-line-centered {
     margin-right: 12px;
 }
 
-#select-line-type .h-line-centered input[type='checkbox'] {
+#select-line-type .h-line-centered input[type=checkbox] {
     margin: 0 6px;
 }
 
-
-
-/*@media (max-width: 800px) {*/
-/*    .head-container {*/
-/*        display: block;*/
-/*    }*/
-/*    #type-select-area {*/
-/*        margin: 8px;*/
-/*        flex-direction: column;*/
-/*        background: #fffffff0;*/
-/*        border: 1px solid #f1f1f1;*/
-/*        border-radius: 6px;*/
-/*        box-shadow: 0 0 10px #cfcfcf;*/
-/*    }*/
-/*    .radio-group {*/
-/*        align-items: unset;*/
-/*        justify-content: center;*/
-/*        padding: 12px 6px;*/
-/*        margin: 4px;*/
-/*        border-radius: 10px;*/
-/*    }*/
-/*    .radio-group:first-child {*/
-/*        margin-top: 12px;*/
-/*    }*/
-/*    .radio-group:last-child {*/
-/*        margin-bottom: 12px;*/
-/*    }*/
-/*    .radio-group:active {*/
-/*        background: #00a3ff;*/
-/*        transition: background 2s ease 0s;*/
-/*    }*/
-/*}*/
+@media screen and (max-width: 1024px) {
+    #head-menu {
+        opacity: 0.95;
+    }
+}
