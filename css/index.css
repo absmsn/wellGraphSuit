@@ -39,10 +39,10 @@ body {
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    border: 1px solid #cfcfcf;
     background-color: white;
     padding: 4px 6px;
     border-radius: 4px;
+    box-shadow: 0 0 6px #cfcfcf;
 }
 
 .float-btn > svg {
@@ -138,6 +138,10 @@ body {
     margin-right: 6px;
 }
 
+.radio-group.selected {
+    background-color: aliceblue;
+}
+
 .h-line-centered {
     display: inline-flex;
     align-items: center;
@@ -161,5 +165,13 @@ body {
 @media screen and (max-width: 1024px) {
     #head-menu {
         opacity: 0.95;
+    }
+    #select-line-type {
+        margin-bottom: 2px;
+        margin-left: 10px;
+    }
+    #head-menu .navbar-end {
+        display: flex;
+        justify-content: center;
     }
 }

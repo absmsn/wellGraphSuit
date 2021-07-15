@@ -1,19 +1,19 @@
 window.addEventListener("load", function () {
+  // 添加事件监听器
+  eventListen();
   // 加载数据并绘图
   init();
-  // 添加事件监听器
-  eventListener();
 });
 
 // 公共变量
 var urlParams = parseUrlParam(location.href);
-var realKop; // 实钻造斜点的深度
-var designKop; // 设计钻线的深度
+var realKop; // 实钻线造斜点的深度
+var designKop; // 设计钻线造斜点的深度
 var defaultTargetRadius = 0; // 默认的靶半径
-var defaultWellNO = "", defaultGraphType = "spatialTrack";
+var defaultWellNO = "JS2020112001", defaultGraphType = "spatialTrack";
 var initWellNO = urlParams.wellNO || defaultWellNO; // 页面的第一次加载时显示的井的井号
 var vViewAngle = 45; // 摄像机垂直方向的视野角度
-var geometry, configObj, externalDataFetch;
+var geometry, configObj, externalDataTransceiver;
 // xy坐标平面大小
 // x,y坐标中绝对值最大的数
 var xyFarthest, realXs, designXs, realYs, designYs, realDepths, designDepths, allXs, allYs;
@@ -23,12 +23,12 @@ var fontPath = './font/optimer_regular.typeface.json';
 var configPath = 'config.json';
 var baseColor = "#000000";
 var factorArray = [10000, 1000, 100, 10, 1, 0.1, 0.01, 0.001, 0.0001, 0.00001, 0.000001];
-var realTrackPoints = [], designTrackPoints = [], designTargetPoints = [], realTargetPoints;
+var realTrackPoints = [], designTrackPoints = [], designTargetPoints = [], realTargetPoints = [];
 var material = new THREE.LineBasicMaterial({color: baseColor});
 
 // 使用FontLoader加载的字体,接受一个回调函数
 // 回调函数的参数是字体对象
-var useFont = (function () {
+var useFont = function () {
   var timerId = null;
   var loadedFont = null;
   var waitingTasks = [];
@@ -51,11 +51,11 @@ var useFont = (function () {
             waitingTasks.splice(0, waitingTasks.length);
             clearInterval(timerId);
           }
-        }, 10);
+        }, 25);
       }
     }
   }
-})();
+}();
 
 function initSpatialTrack() {
   var autoRotate = true, realDrillLines, designDrillLines;
@@ -137,7 +137,6 @@ function initSpatialTrack() {
     antialias: true,
     canvas: canvas,
     preserveDrawingBuffer: true, // 设置为true才能导出图片
-    precision: "lowp"
   });
   renderer.setSize(canvas.offsetWidth, canvas.offsetHeight);
   renderer.setClearColor(new THREE.Color("white"));
@@ -419,7 +418,8 @@ function initHorizontalProjection() {
     return p.x - p.r; // 设计靶圈的左边界
   })));
   var bottom = Math.min.apply(null, allYs.concat(realTargetPoints.map(function (p) {
-    return p.y - p.r; // 实钻靶圈的下边界s})).concat(designTargetPoints.map(function (p) {
+    return p.y - p.r; // 实钻靶圈的下边界
+  })).concat(designTargetPoints.map(function (p) {
     return p.y - p.r; // 设计靶圈的下边界
   })));
   var top = Math.max.apply(null, allYs.concat(realTargetPoints.map(function (p) {
@@ -434,13 +434,13 @@ function initHorizontalProjection() {
   })));
   left = left >= 0 ? 0 : -fMul(Math.ceil(fDivision(-left, xyUnit)), xyUnit);
   bottom = bottom >= 0 ? 0 : -fMul(Math.ceil(fDivision(-bottom, xyUnit)), xyUnit);
-  top = top >= 0 ? fMul(Math.ceil(fDivision(top, xyUnit)), xyUnit) : xyUnit;
-  right = right >= 0 ? fMul(Math.ceil(fDivision(right, xyUnit)), xyUnit) : xyUnit;
+  top = top >= 0 ? fMul(Math.ceil(fDivision(top, xyUnit)), xyUnit) : xyUnit; // x正轴方向至少要有一个格子
+  right = right >= 0 ? fMul(Math.ceil(fDivision(right, xyUnit)), xyUnit) : xyUnit; // y轴正轴至少要有一个格子
   var planeWidth = fSub(right, left), planeHeight = fSub(top, bottom); // 坐标网格的宽高
   var difference = fSub(planeHeight, planeWidth);
   var gain = fMul(Math.ceil(fDivision(Math.abs(difference), xyUnit)), xyUnit);
   // 要让网格的左右宽度和上下高度查不多
-  // 如果高度大于宽度,宽度要补上相应的差值
+  // 如果高度大于宽度,宽度要补上相应的差值(差值是格子大小的倍数)
   if (difference > 0) {
     if (Math.abs(left) > Math.abs(right)) {
       right = fAdd(right, gain);
@@ -470,7 +470,6 @@ function initHorizontalProjection() {
     antialias: true,
     canvas: canvas,
     preserveDrawingBuffer: true,
-    precision: "lowp"
   });
   renderer.setSize(canvas.offsetWidth, canvas.offsetHeight);
   renderer.setClearColor(new THREE.Color("white"));
@@ -496,8 +495,7 @@ function initHorizontalProjection() {
   var realDrillLines = new THREE.Group();
   realDrillLines.name = "realDrillLines"
   // 实钻线靶点
-  var targetCenterMaterial = new THREE.PointsMaterial({color: baseColor, size: xyUnit / 5});
-  var realTargetCircleMaterial = new THREE.LineBasicMaterial({color: baseColor});
+  var targetCenterMaterial = new THREE.PointsMaterial({color: realTrackLineColor, size: xyUnit / 5});
   realTargetPoints.forEach(function (p) {
     // 靶心
     var geometry = new THREE.BufferGeometry();
@@ -511,9 +509,10 @@ function initHorizontalProjection() {
       points.push(new THREE.Vector3(Math.cos(angle) * p.r + p.x, Math.sin(angle) * p.r + p.y, 0));
     }
     geometry = new THREE.BufferGeometry().setFromPoints(points);
-    var circle = new THREE.Line(geometry, realTargetCircleMaterial);
+    var circle = new THREE.Line(geometry, realTrackLineMaterial);
     realDrillLines.add(circle);
     // 计算靶圈和轨迹曲线的相交点
+    var realCrossPointMaterial = new THREE.MeshBasicMaterial({color: realTrackLineColor,});
     for (var i = 0; i < realTrackPoints.length - 1; i++) {
       // 如果靶点的深度不在两个点的深度之间,则一定不相交
       if (p.depth < realTrackPoints[i].depth || p.depth > realTrackPoints[i + 1].depth)
@@ -530,7 +529,7 @@ function initHorizontalProjection() {
             size: fontSize,
             height: fontHeight
           });
-          var mesh = new THREE.Mesh(textGeometry, textMaterial);
+          var mesh = new THREE.Mesh(textGeometry, realCrossPointMaterial);
           var box = new THREE.Box3().setFromObject(mesh);
           mesh.position.x = x - (box.max.x - box.min.x) / 2;
           mesh.position.y = y - (box.max.y - box.min.y) / 2;
@@ -560,8 +559,7 @@ function initHorizontalProjection() {
   var designTrackLine = new THREE.Line(geometry, designTrackLineMaterial);
   designDrillLines.add(designTrackLine);
   // 实钻线靶点
-  var targetCenterMaterial = new THREE.PointsMaterial({color: baseColor, size: xyUnit / 5});
-  var designTargetCircleMaterial = new THREE.LineBasicMaterial({color: baseColor});
+  var targetCenterMaterial = new THREE.PointsMaterial({color: designTrackLineColor, size: xyUnit / 5});
   designTargetPoints.forEach(function (p) {
     // 靶心
     var geometry = new THREE.BufferGeometry();
@@ -576,9 +574,10 @@ function initHorizontalProjection() {
       points.push(new THREE.Vector3(Math.cos(angle) * p.r + p.x, Math.sin(angle) * p.r + p.y, 0));
     }
     geometry = new THREE.BufferGeometry().setFromPoints(points);
-    var circle = new THREE.Line(geometry, designTargetCircleMaterial);
+    var circle = new THREE.Line(geometry, designTrackLineMaterial);
     designDrillLines.add(circle);
     // 计算靶圈和轨迹曲线的相交点
+    var designCrossPointMaterial = new THREE.MeshBasicMaterial({color: designTrackLineColor,});
     for (var i = 0; i < designTrackPoints.length - 1; i++) {
       if (p.depth < designTrackPoints[i].depth || p.depth > designTrackPoints[i + 1].depth)
         continue;
@@ -593,7 +592,7 @@ function initHorizontalProjection() {
             size: fontSize,
             height: fontHeight
           });
-          var mesh = new THREE.Mesh(textGeometry, textMaterial);
+          var mesh = new THREE.Mesh(textGeometry, designCrossPointMaterial);
           var box = new THREE.Box3().setFromObject(mesh)
           mesh.position.x = x - (box.max.x - box.min.x) / 2;
           mesh.position.y = y - (box.max.y - box.min.y) / 2;
@@ -640,7 +639,6 @@ function initHorizontalProjection() {
   useFont(function (font) {
     var fontSize = xyUnit * fontSizeToUnitRatio;
     var fontHeight = xyUnit / 20;
-    var textMaterial = new THREE.MeshBasicMaterial({color: fontColor});
     // x轴上的刻度
     for (var i = 0; i <= (xRange.max - xRange.min) / xyUnit; i++) {
       var text = fAdd(xRange.min, fMul(xyUnit, i)).toString();
@@ -651,7 +649,7 @@ function initHorizontalProjection() {
         height: fontHeight
       });
       var mesh = new THREE.Mesh(textGeometry, textMaterial);
-      var box = new THREE.Box3().setFromObject(mesh)
+      var box = new THREE.Box3().setFromObject(mesh);
       mesh.position.x = xRange.min + xyUnit * i - fontSize / 2;
       mesh.position.y = (box.max.x - box.min.x) / 2;
       mesh.position.z = -fontHeight / 2;
@@ -724,14 +722,18 @@ function initVerticalProjection() {
     fontSizeToUnitRatio = config.fontSizeToUnitRatio || fontSizeToUnitRatio;
     realTrackLineColor = config.realTrackLineColor || realTrackLineColor;
     designTrackLineColor = config.designTrackLineColor || designTrackLineColor;
+    realKopLineColor = config.realKopLineColor || realKopLineColor;
+    designKopLineColor = config.designKopLineColor || designKopLineColor;
+    realTargetCircleColor = config.realTargetCircleColor || realTargetCircleColor;
+    designTargetCircleColor = config.designTargetCircleColor || designTargetCircleColor;
     directionLabelColor = config.directionLabelColor || directionLabelColor;
   }
   var xAxisMaterial = new THREE.LineBasicMaterial({color: hAxisColor});
   var yAxisMaterial = new THREE.LineBasicMaterial({color: vAxisColor});
   var realTrackLineMaterial = new THREE.LineBasicMaterial({color: realTrackLineColor});
   var designTrackLineMaterial = new THREE.LineBasicMaterial({color: designTrackLineColor});
-  // 获取一个合适的网格大小,xoy平面
   var farthest = Math.max(Math.max.apply(null, realDepths), Math.abs(Math.max.apply(null, hRealTracks)), Math.abs(Math.min.apply(null, hRealTracks)));
+  // 获取一个合适的网格大小,xoz平面或yoz平面
   var gridUnit = getApproximateGridSize(farthest, gridNum, factorArray);
   var depthToY = function(depth) {return -depth};
   var yToDepth = function(y) {return -y};
@@ -751,7 +753,6 @@ function initVerticalProjection() {
     antialias: true,
     canvas: canvas,
     preserveDrawingBuffer: true, // 设置为true才能导出图片
-    precision: "lowp"
   });
   var centerY = (vRange.min + vRange.max) / 2;
   var cameraZ = getCameraHeightFullContain(hRange.max - hRange.min, vRange.max - vRange.min, canvas.offsetWidth, canvas.offsetHeight, vViewAngle);//相机的z坐标
@@ -990,16 +991,14 @@ function triggerInitError(text) {
   throw Error(text);
 }
 
+// 主函数
 function init() {
   loadConfigFile(configPath)
       .then(function () {
-        return fetchRealTrackPoints(initWellNO);
-      }).then(function () {
-        return fetchRealTargetPoints(initWellNO);
-      }).then(function () {
-        return fetchDesignTrackPoints(initWellNO);
-      }).then(function () {
-        return fetchDesignTargetPoints(initWellNO);
+        return Promise.all([fetchRealTrackPoints(initWellNO),
+          fetchRealTargetPoints(initWellNO),
+          fetchDesignTrackPoints(initWellNO),
+          fetchDesignTargetPoints(initWellNO)]);
       }).then(dataProcess)
       .then(initGraph);
 }
@@ -1088,7 +1087,7 @@ function loadConfigFile(configPath) {
       }
     }).then(function (res) {
       configObj = res.data;
-      externalDataFetch = new axios.create({
+      externalDataTransceiver = new axios.create({
         baseURL: configObj.externalDataBasePath
       });
       if (configObj.defaultTargetRadius && configObj.defaultTargetRadius >= 0) {
@@ -1107,7 +1106,7 @@ function loadConfigFile(configPath) {
 // 获取实际钻靶点数据
 function fetchRealTargetPoints(wellNO) {
   return new Promise(function (resolve) {
-    externalDataFetch.get("/api/jxjs/getBd", {
+    externalDataTransceiver.get("/api/jxjs/getBd", {
       params: {jhdm: wellNO}
     }).then(function (res) {
       try {
@@ -1126,7 +1125,7 @@ function fetchRealTargetPoints(wellNO) {
 // 获取实钻靶点数据
 function fetchDesignTargetPoints(wellNO) {
   return new Promise(function (resolve) {
-    externalDataFetch.get("/api/jxjs/getSjBd", {
+    externalDataTransceiver.get("/api/jxjs/getSjBd", {
       params: {jhdm: wellNO}
     }).then(function (res) {
       try {
@@ -1145,7 +1144,7 @@ function fetchDesignTargetPoints(wellNO) {
 // 获取实钻的轨迹点数据
 function fetchRealTrackPoints(wellNO) {
   return new Promise(function (resolve) {
-    externalDataFetch.get("api/jxjs/getLxAll",{
+    externalDataTransceiver.get("api/jxjs/getLxAll",{
       params: {jhdm: wellNO}
     }).then(function (res) {
       try {
@@ -1168,7 +1167,7 @@ function fetchRealTrackPoints(wellNO) {
 // 获取设计钻井钻的轨迹点数据
 function fetchDesignTrackPoints(wellNO) {
   return new Promise(function (resolve) {
-    externalDataFetch.get("/api/jxjs/getSjAll",{
+    externalDataTransceiver.get("/api/jxjs/getSjAll",{
       params: {jhdm: wellNO}
     }).then(function (res) {
       try {
@@ -1191,7 +1190,7 @@ function fetchDesignTrackPoints(wellNO) {
 // 根据井名的前缀获取所有以它开头的井的井号
 function fetchWellNOByPrefix(prefix) {
   return new Promise(function (resolve) {
-    externalDataFetch.get('/api/jxjs/getJh', {
+    externalDataTransceiver.get('/api/jxjs/getJh', {
       params: {jhdm: prefix}
     }).then(function (res) {
       resolve(res.data);
@@ -1238,7 +1237,7 @@ function parseTrackPointsData(points) {
   });
 }
 
-function eventListener() {
+function eventListen() {
   // 展开和收起页头的菜单
   var headBurger = document.getElementById('head-burger');
   var headMenu = document.getElementById("head-menu");
@@ -1290,8 +1289,8 @@ function eventListener() {
     imeInputting = true;
   });
   wellNameInput.addEventListener("keyup",debounce(function () {
-    if (imeInputting) return; // 如果在输入中文,则不操作
-    if (wellNameInput.value === "") { // 清空输入框,什么也不做
+    if (imeInputting) return; // 如果是正在输入中文,则不操作
+    if (wellNameInput.value === "") { // 输入框被清空,此时什么也不做
       dropdown.innerHTML = "";
       return;
     }
@@ -1311,9 +1310,9 @@ function eventListener() {
         });
       }
     });
-  }, 250)); // 防抖,以免频繁的向后端发送请求
+  }, 250)); // 防抖,以免频繁的向后端发送请求,执行n毫秒内触发的最后一次动作
   document.addEventListener("click", function (e) {
-    // 点击空白区域删除井名的下拉菜单
+    // 点击空白区域清除井名下拉菜单
     var target = e.target || e.srcElement;
     while (target) {
       if (target === dropdown) {
@@ -1331,14 +1330,17 @@ function CanvasGraph(config) {
   var scene = config.scene;
   var camera = config.camera;
   var canvas = null;
-  this.canvas = canvas;
   if (!renderer) {
     throw Error("没有渲染器参数!");
   }
   if (!camera) {
     throw Error("没有相机参数!");
   }
+  if (!scene) {
+    throw Error("没有场景参数!");
+  }
   canvas = renderer.domElement;
+  this.canvas = canvas;
   if (controls) {
     // 只有图形更新时才重绘
     controls.addEventListener("change", draw);
@@ -1352,7 +1354,7 @@ function CanvasGraph(config) {
   this.show = function () {
     if (canvas && canvas.style) {
       canvas.style.display = "";
-      draw();
+      windowResize();
     }
   }
 

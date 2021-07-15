@@ -1,12 +1,14 @@
 {
     // 颜色必须是有效的颜色字符串、十六进制类型或rgb格式
     // 形如"red", "#ff0000", "rgb(255, 0, 0)"
-    // 获取轨迹点数据的路径
     // 默认井号
     "defaultWellNO": "JS2020112001",
+    // 页面默认打开的图;
+    // verticalProjectionEW:垂直剖面投影图(东西),verticalProjectionNS:垂直剖面投影图(南北)
+    // horizontalProjection:水平位移投影图,spatialTrack:立体空间轨迹图
     "defaultGraphType": "spatialTrack",
     "externalDataBasePath": "http://10.83.23.53:8089",
-    // 默认的靶半径
+    // 默认的靶半径,如果不设置则为0
     "defaultTargetRadius": 40,
     "spatialTrack": {
         // 在xoy平面上,坐标轴在某个象限上的格子数
@@ -19,7 +21,7 @@
         "yAxisColor": "#00ff00",
         // z坐标轴的颜色
         "zAxisColor": "#0000ff",
-        // z轴长度与x、y轴长度的比值
+        // z轴长度与x、y轴长度的最大比值
         "maxZToXyRatio": 2,
         // 字的颜色
         "fontColor": "purple",
@@ -38,11 +40,11 @@
         // 字体大小与单元格大小的比值
         "fontSizeToUnitRatio": 0.3,
         // 是否开启自动旋转
-        "autoRotate": false
+        "autoRotate": true
     },
     "horizontalProjection": {
-        // 在xoy平面上,坐标轴在某个象限上的格子数
-        "xyGridNum": 6,
+        // 在xoy平面上,坐标轴在某个象限上的最大格子数目
+        "xyGridNum": 8,
         // x坐标轴的颜色
         "xAxisColor": "#ff0000",
         // y坐标轴的颜色
@@ -59,11 +61,19 @@
     "verticalProjectionEW": {
         "gridNum": 12,
         // 实钻线的颜色
-        "realTrackLineColor": "red",
+        "realTrackLineColor": "#4caf50",
         // 设计钻线的颜色
-        "designTrackLineColor": "green",
+        "designTrackLineColor": "#cf52a3",
         // 字体大小与单元格大小的比值
         "fontSizeToUnitRatio": 0.3,
+        // 实钻线造斜点的颜色
+        "realKopLineColor": "#4caf50",
+        // 实钻线靶圈的颜色
+        "realTargetCircleColor": "#4caf50",
+        // 设计线造斜点的颜色
+        "designKopLineColor": "#cf52a3",
+        // 设计钻线靶圈的颜色
+        "designTargetCircleColor": "#cf52a3",
         // 横坐标轴的颜色
         "hAxisColor": "red",
         // 纵坐标轴的颜色
@@ -79,8 +89,8 @@
         "vAxisColor": "red",
         "fontColor": "purple",
         "fontSizeToUnitRatio": 0.3,
-        "realTrackLineColor": "red",
-        "designTrackLineColor": "green",
+        "realTrackLineColor": "#4caf50",
+        "designTrackLineColor": "#cf52a3",
         "directionLabelColor": "#30a881"
     }
 }
