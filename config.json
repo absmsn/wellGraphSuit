@@ -85,12 +85,27 @@
     },
     "verticalProjectionNS": {
         "gridNum": 12,
-        "hAxisColor": "green",
-        "vAxisColor": "red",
-        "fontColor": "purple",
-        "fontSizeToUnitRatio": 0.3,
+        // 实钻线的颜色
         "realTrackLineColor": "#4caf50",
+        // 设计钻线的颜色
         "designTrackLineColor": "#cf52a3",
+        // 字体大小与单元格大小的比值
+        "fontSizeToUnitRatio": 0.3,
+        // 实钻线造斜点的颜色
+        "realKopLineColor": "#4caf50",
+        // 实钻线靶圈的颜色
+        "realTargetCircleColor": "#4caf50",
+        // 设计线造斜点的颜色
+        "designKopLineColor": "#cf52a3",
+        // 设计钻线靶圈的颜色
+        "designTargetCircleColor": "#cf52a3",
+        // 横坐标轴的颜色
+        "hAxisColor": "red",
+        // 纵坐标轴的颜色
+        "vAxisColor": "green",
+        // 字体颜色
+        "fontColor": "purple",
+        // 方向指示器的颜色
         "directionLabelColor": "#30a881"
     }
 }

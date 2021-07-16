@@ -1,4 +1,5 @@
 window.addEventListener("load", function () {
+  loading = document.getElementById("loadingText");
   // 添加事件监听器
   eventListen();
   // 加载数据并绘图
@@ -25,6 +26,7 @@ var baseColor = "#000000";
 var factorArray = [10000, 1000, 100, 10, 1, 0.1, 0.01, 0.001, 0.0001, 0.00001, 0.000001];
 var realTrackPoints = [], designTrackPoints = [], designTargetPoints = [], realTargetPoints = [];
 var material = new THREE.LineBasicMaterial({color: baseColor});
+var loading; // 加载中dom对象
 
 // 使用FontLoader加载的字体,接受一个回调函数
 // 回调函数的参数是字体对象
@@ -975,7 +977,6 @@ function initVerticalProjectionNS() {
 // 画图完成后需要完成的动作
 function postDrawFinished() {
   // 隐藏加载中提示
-  var loading = document.getElementById("loadingText");
   if (loading) {
     loading.style.display = "none";
   }
@@ -983,7 +984,6 @@ function postDrawFinished() {
 
 // 页面初始化时出现异常,提示用户并抛出异常
 function triggerInitError(text) {
-  var loading = document.getElementById("loadingText");
   if (loading) {
     loading.innerText = text;
     loading.style.color = "red";
@@ -1058,6 +1058,9 @@ function dataProcess() {
     designXs = designTrackPoints.map(function (p) { return p.x });
     realYs = realTrackPoints.map(function (p) { return p.y });
     designYs = designTrackPoints.map(function (p) { return p.y });
+    if (realXs.length === 0 && designXs.length === 0 && realYs.length === 0 && designYs.length === 0) {
+      triggerInitError("此图无数据!");
+    }
     allXs = realXs.concat(designXs);
     allYs = realYs.concat(designYs);
     // 实钻线的深度数据
