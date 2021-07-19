@@ -13,11 +13,12 @@ var designKop; // 设计钻线造斜点的深度
 var defaultTargetRadius = 0; // 默认的靶半径
 var defaultWellNO = "JS2020112001", defaultGraphType = "spatialTrack";
 var initWellNO = urlParams.wellNO || defaultWellNO; // 页面的第一次加载时显示的井的井号
+var wellName; // 井名
 var vViewAngle = 45; // 摄像机垂直方向的视野角度
 var geometry, configObj, externalDataTransceiver;
 // xy坐标平面大小
 // x,y坐标中绝对值最大的数
-var xyFarthest, realXs, designXs, realYs, designYs, realDepths, designDepths, allXs, allYs;
+var xyFarthest, realXs = [], designXs = [], realYs = [], designYs = [], realDepths = [], designDepths = [], allXs = [], allYs = [];
 var curGraph; // 当前页面显示的图像
 var spatialTrack, verticalProjectionEW, horizontalProjection, verticalProjectionNS;
 var fontPath = './font/optimer_regular.typeface.json';
@@ -154,7 +155,7 @@ function initSpatialTrack() {
   // 监听鼠标动作
   var controls = new THREE.OrbitControls(camera, canvas);
   // 是否开启阻尼效果
-  controls.enableDamping = true;
+  controls.enableDamping = false;
   // 是否开启自动旋转
   controls.autoRotate = autoRotate;
 
@@ -995,6 +996,12 @@ function triggerInitError(text) {
 function init() {
   loadConfigFile(configPath)
       .then(function () {
+        fetchWellNameByNO(initWellNO).then(function (text) {
+          var wellNameDom = document.getElementById('well-name-text');
+          if (wellNameDom) {
+            wellNameDom.innerText = text;
+          }
+        });
         return Promise.all([fetchRealTrackPoints(initWellNO),
           fetchRealTargetPoints(initWellNO),
           fetchDesignTrackPoints(initWellNO),
@@ -1203,6 +1210,19 @@ function fetchWellNOByPrefix(prefix) {
   });
 }
 
+function fetchWellNameByNO(no) {
+  return new Promise(function (resolve) {
+    externalDataTransceiver.get('/api/jxjs/getJhbm', {
+      params: {jhdm: no}
+    }).then(function (res) {
+      wellName = res.data.length > 0 ? res.data[0].jhbm : "";
+      resolve(wellName);
+    }).catch(function (err) {
+      console.error("无法获取井号数据!");
+    });
+  });
+}
+
 // 构建井名的下拉菜单
 function buildWellNameSelectDropdown(data) {
   var html = '<div class="dropdown is-active">';
@@ -1293,7 +1313,7 @@ function eventListen() {
   });
   wellNameInput.addEventListener("keyup",debounce(function () {
     if (imeInputting) return; // 如果是正在输入中文,则不操作
-    if (wellNameInput.value === "") { // 输入框被清空,此时什么也不做
+    if (wellNameInput.value === "") { // 输入框被清空,清空下拉菜单
       dropdown.innerHTML = "";
       return;
     }
@@ -1315,7 +1335,7 @@ function eventListen() {
     });
   }, 250)); // 防抖,以免频繁的向后端发送请求,执行n毫秒内触发的最后一次动作
   document.addEventListener("click", function (e) {
-    // 点击空白区域清除井名下拉菜单
+    // 点击空白区域清除井名菜单
     var target = e.target || e.srcElement;
     while (target) {
       if (target === dropdown) {
