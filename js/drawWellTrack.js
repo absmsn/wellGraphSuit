@@ -102,7 +102,7 @@ function initSpatialTrack() {
   // }
   // 获取一个合适的网格大小,xoy平面
   xyUnit = getApproximateGridSize(_xyFarthest, xyGridNum, factorArray);
-  _xyFarthest = fMul(xyGridNum, xyUnit);
+  _xyFarthest = fMul(Math.ceil(fDivision(_xyFarthest, xyUnit)), xyUnit);
   // 获取z轴一个合适的网格大小
   zUnit = getApproximateGridSize(maxDepth, zGridNum, factorArray);
 
@@ -149,7 +149,7 @@ function initSpatialTrack() {
   camera.up.x = 0;
   camera.up.y = 0;
   camera.up.z = 1;
-  camera.position.set(-_xyFarthest, -_xyFarthest, zRange.max);
+  camera.position.set(-2 * _xyFarthest, -2 * _xyFarthest, 2 * _xyFarthest);
   camera.lookAt(0, 0, zRange.min);
   // 监听鼠标动作
   var controls = new THREE.OrbitControls(camera, canvas);
@@ -382,17 +382,24 @@ function initSpatialTrack() {
   });
   canvas.style.display = "none";
   // 点击之后关闭自动旋转
+  var timerId;
   canvas.addEventListener("click", function () {
     controls.autoRotate = false;
-    setTimeout(function () {
-      controls.autoRotate = true;
-    }, 10000);
+    if (!timerId) {
+      timerId = setTimeout(function () {
+        controls.autoRotate = true;
+        timerId = null;
+      }, 10000);
+    }
   });
   canvas.addEventListener("touchstart", function () {
     controls.autoRotate = false;
-    setTimeout(function () {
-      controls.autoRotate = true;
-    }, 10000);
+    if (!timerId) {
+      timerId = setTimeout(function () {
+        controls.autoRotate = true;
+        timerId = null;
+      }, 10000);
+    }
   });
 }
 
@@ -541,9 +548,14 @@ function initHorizontalProjection() {
           });
           var mesh = new THREE.Mesh(textGeometry, realCrossPointMaterial);
           var box = new THREE.Box3().setFromObject(mesh);
-          mesh.position.x = x - (box.max.x - box.min.x) / 2;
-          mesh.position.y = y - (box.max.y - box.min.y) / 2;
+          var h = (box.max.y - box.min.y);
+          var w = (box.max.x - box.min.x);
+          var theta = Math.atan((realTrackPoints[i+1].y - realTrackPoints[i].y) / (realTrackPoints[i + 1].x - realTrackPoints[i].x));
+          var phi = Math.PI / 2 - theta / 2 - Math.atan(h / w);
+          mesh.position.x = x - w / 2 + Math.sqrt(Math.pow(w, 2) + Math.pow(h, 2)) * Math.sin(theta / 2) * Math.cos(phi);
+          mesh.position.y = y - h / 2 - Math.sqrt(Math.pow(w, 2) + Math.pow(h, 2)) * Math.sin(theta / 2) * Math.sin(phi);
           mesh.position.z = -fontHeight / 2;
+          mesh.rotation.z = theta;
           realDrillLines.add(mesh);
         });
       }
@@ -604,10 +616,15 @@ function initHorizontalProjection() {
             height: fontHeight
           });
           var mesh = new THREE.Mesh(textGeometry, designCrossPointMaterial);
-          var box = new THREE.Box3().setFromObject(mesh)
-          mesh.position.x = x - (box.max.x - box.min.x) / 2;
-          mesh.position.y = y - (box.max.y - box.min.y) / 2;
+          var box = new THREE.Box3().setFromObject(mesh);
+          var theta = Math.atan((designTrackPoints[i+1].y - designTrackPoints[i].y) / (designTrackPoints[i + 1].x - designTrackPoints[i].x));
+          var h = (box.max.y - box.min.y);
+          var w = (box.max.x - box.min.x);
+          var phi = Math.PI / 2 - theta / 2 - Math.atan(h / w);
+          mesh.position.x = x - w / 2 + Math.sqrt(Math.pow(w, 2) + Math.pow(h, 2)) * Math.sin(theta / 2) * Math.cos(phi);
+          mesh.position.y = y - h / 2 - Math.sqrt(Math.pow(w, 2) + Math.pow(h, 2)) * Math.sin(theta / 2) * Math.sin(phi);
           mesh.position.z = -fontHeight / 2;
+          mesh.rotation.z = theta;
           designDrillLines.add(mesh);
         });
       }
