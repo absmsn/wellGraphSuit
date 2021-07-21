@@ -56,18 +56,18 @@
         <div class="navbar-end">
           <div class="navbar-item" id="select-line-type">
             <div class="h-line-centered">
-              <input type="checkbox" id="check-design-line" checked>
-              <label for="check-design-line">设计轨道</label>
-            </div>
-            <div class="h-line-centered">
               <input type="checkbox" id="check-real-line" checked>
               <label for="check-real-line">实钻轨迹</label>
+            </div>
+            <div class="h-line-centered">
+              <input type="checkbox" id="check-design-line" checked>
+              <label for="check-design-line">设计轨道</label>
             </div>
           </div>
         </div>
       </div>
     </div>
-    <div class="canvas-area">
+    <div id="canvas-area">
       <div id="float-btn-panel">
         <div id="export-btn" class="float-btn" title="导出">
           <svg t="1624609062104" id="export-btn-icon" class="icon" viewBox="0 0 1024 1024" p-id="686" width="200" height="200">
@@ -76,10 +76,16 @@
         </div>
       </div>
       <div id="loadingText">加载中...</div>
-      <canvas id="spatialTrack" style="display: none;"></canvas>
-      <canvas id="horizontalProjection" style="display: none;"></canvas>
-      <canvas id="verticalProjectionNS" style="display: none;"></canvas>
-      <canvas id="verticalProjectionEW" style="display: none;"></canvas>
+      <div id="canvas-group">
+        <canvas id="spatialTrack" style="display: none;"></canvas>
+        <canvas id="horizontalProjection" style="display: none;"></canvas>
+        <canvas id="verticalProjectionNS" style="display: none;"></canvas>
+        <canvas id="verticalProjectionEW" style="display: none;"></canvas>
+      </div>
+    </div>
+    <div id="well-name-banner">
+      <div id="well-name-banner-text">
+      </div>
     </div>
   </div>
 </body>

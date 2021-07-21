@@ -97,15 +97,14 @@ function initSpatialTrack() {
   // 设计钻线和实钻线的最大深度
   var maxDepth = Math.max.apply(null, realDepths.concat(designDepths)); // 最大深度
   var _xyFarthest = xyFarthest;
-  if (maxDepth / xyFarthest > maxZToXyRatio) {
-    _xyFarthest = maxDepth / maxZToXyRatio;
-  }
+  // if (maxDepth / xyFarthest > maxZToXyRatio) {
+  //   _xyFarthest = maxDepth / maxZToXyRatio;
+  // }
   // 获取一个合适的网格大小,xoy平面
   xyUnit = getApproximateGridSize(_xyFarthest, xyGridNum, factorArray);
   _xyFarthest = fMul(xyGridNum, xyUnit);
   // 获取z轴一个合适的网格大小
   zUnit = getApproximateGridSize(maxDepth, zGridNum, factorArray);
-  maxDepth = fMul(zGridNum, zUnit);
 
   // 将深度转换为z轴上的坐标
   var depthToZ = function (depth) { return fSub(maxDepth, depth) };
@@ -117,7 +116,7 @@ function initSpatialTrack() {
     min: depthToZ(maxDepth),
     max: depthToZ(0) // 深度0在z轴的最上方
   }
-  var smallestDashNum = 10; // 在最短的垂线(虚线)上显示的虚线段的数目
+  var smallestDashNum = 1; // 在最短的垂线(虚线)上显示的虚线段的数目
   var gapRatio = 1 / 3; // 间隙占虚线端的比例
   var realAltitudeZ = maxDepth - Math.max.apply(null, realDepths); // 深度最大的点距离xoy平面的垂直距离
   var realVerticalLineMaterial = new THREE.LineDashedMaterial({
@@ -192,6 +191,7 @@ function initSpatialTrack() {
   //// 设计钻线
   designDrillLines = new THREE.Group();
   designDrillLines.name = "designDrillLines";
+  designDrillLines.visible = false;
   // 轨迹点
   var points = designTrackPoints.map(function (p) {
     return new THREE.Vector3(p.x, p.y, depthToZ(p.depth));
@@ -258,10 +258,11 @@ function initSpatialTrack() {
       mesh.position.z = -fontHeight / 2;
       scene.add(mesh);
     }
-    // z轴上的刻度
-    for (var i = 0; i <= (zRange.max - zRange.min) / zUnit; i++) {
-      var text = fSub(maxDepth, fMul(zUnit, i)).toString();
-      var textGeometry = new THREE.TextGeometry(text, {
+    // z轴上的刻度,从0开始画
+    var markNum = Math.ceil(maxDepth / zUnit);
+    for (var i = 0; i < markNum; i++) {
+      var depth = fMul(zUnit, i); // 当前刻度上表示的深度值
+      var textGeometry = new THREE.TextGeometry(depth.toString(), {
         font: font,
         size: fontSize,
         height: fontHeight
@@ -269,7 +270,7 @@ function initSpatialTrack() {
       var mesh = new THREE.Mesh(textGeometry, textMaterial);
       mesh.position.x = fontSize / 2;
       mesh.position.y = -fontHeight / 2;
-      mesh.position.z = zRange.min + zUnit * i - fontSize / 2;
+      mesh.position.z = depthToZ(depth) - fontSize / 2;
       mesh.rotation.x = Math.PI / 2;
       scene.add(mesh);
     }
@@ -383,9 +384,15 @@ function initSpatialTrack() {
   // 点击之后关闭自动旋转
   canvas.addEventListener("click", function () {
     controls.autoRotate = false;
+    setTimeout(function () {
+      controls.autoRotate = true;
+    }, 10000);
   });
   canvas.addEventListener("touchstart", function () {
     controls.autoRotate = false;
+    setTimeout(function () {
+      controls.autoRotate = true;
+    }, 10000);
   });
 }
 
@@ -554,6 +561,7 @@ function initHorizontalProjection() {
   // 设计钻线
   var designDrillLines = new THREE.Group();
   designDrillLines.name = "designDrillLines";
+  designDrillLines.visible = false;
   // 设计钻线轨迹点
   var points = designTrackPoints.map(function (p) {
     return new THREE.Vector3(p.x, p.y, 0);
@@ -735,7 +743,9 @@ function initVerticalProjection() {
   var yAxisMaterial = new THREE.LineBasicMaterial({color: vAxisColor});
   var realTrackLineMaterial = new THREE.LineBasicMaterial({color: realTrackLineColor});
   var designTrackLineMaterial = new THREE.LineBasicMaterial({color: designTrackLineColor});
-  var farthest = Math.max(Math.max.apply(null, realDepths), Math.abs(Math.max.apply(null, hRealTracks)), Math.abs(Math.min.apply(null, hRealTracks)));
+  var farthest = Math.max(Math.max.apply(null, realDepths), Math.max.apply(null, designDepths),
+      Math.abs(Math.max.apply(null, hRealTracks)) * 2, Math.abs(Math.min.apply(null, hRealTracks)) * 2,
+      Math.abs(Math.max.apply(null, hDesignTracks)) * 2, Math.abs(Math.min.apply(null, hDesignTracks)) * 2);
   // 获取一个合适的网格大小,xoz平面或yoz平面
   var gridUnit = getApproximateGridSize(farthest, gridNum, factorArray);
   var depthToY = function(depth) {return -depth};
@@ -839,7 +849,8 @@ function initVerticalProjection() {
 
   //// 设计钻线
   var designDrillLines = new THREE.Group();
-  designDrillLines.name = "designDrillLines"
+  designDrillLines.name = "designDrillLines";
+  designDrillLines.visible = false;
   // 设计钻线轨迹点
   var points = designTrackPoints.map(function (p, i) {
     return new THREE.Vector3(hDesignTracks[i], depthToY(p.depth), 0);
@@ -992,15 +1003,19 @@ function triggerInitError(text) {
   throw Error(text);
 }
 
+function setWellName(name) {
+  var wellNameDom = document.getElementById('well-name-text');
+  if (wellNameDom) {
+    wellNameDom.innerText = name;
+  }
+}
+
 // 主函数
 function init() {
   loadConfigFile(configPath)
       .then(function () {
         fetchWellNameByNO(initWellNO).then(function (text) {
-          var wellNameDom = document.getElementById('well-name-text');
-          if (wellNameDom) {
-            wellNameDom.innerText = text;
-          }
+          setWellName(text);
         });
         return Promise.all([fetchRealTrackPoints(initWellNO),
           fetchRealTargetPoints(initWellNO),
@@ -1022,23 +1037,27 @@ function initGraph() {
 // 在不同的图之间切换
 function switchGraph(graphType) {
   curGraph && curGraph.hide();
-  var candidate;
+  var candidate, wellTypeText;
   if (graphType === "verticalProjectionEW") {
+    wellTypeText = "垂直剖面投影图(东西)";
     if (!verticalProjectionEW) {
       initVerticalProjectionEW();
     }
     candidate = verticalProjectionEW;
   } else if (graphType === "verticalProjectionNS") {
+    wellTypeText = "垂直剖面投影图(南北)";
     if (!verticalProjectionNS) {
       initVerticalProjectionNS();
     }
     candidate = verticalProjectionNS;
   } else if (graphType === "horizontalProjection") {
+    wellTypeText = "水平位移投影图";
     if (!horizontalProjection) {
       initHorizontalProjection();
     }
     candidate = horizontalProjection;
   } else { // spatialTrack
+    wellTypeText = "立体空间轨迹图";
     if (!spatialTrack) {
       initSpatialTrack();
     }
@@ -1056,6 +1075,9 @@ function switchGraph(graphType) {
   realLineCheck.checked = realVisible;
   var designLineCheck = document.getElementById("check-design-line");
   designLineCheck.checked = designVisible;
+  // 设置页面底部井的名称和类型
+  var bannerText = document.getElementById('well-name-banner-text');
+  bannerText && (bannerText.innerText = wellTypeText);
 }
 
 // 计算一些必要的变量
@@ -1239,25 +1261,47 @@ function buildWellNameSelectDropdown(data) {
 
 // 解析靶点数据
 function parseTargetPointsData(points) {
-  return points.map(function (p) {
+  var invalidNum = 0;
+  points = points.map(function (p) {
     return {
       y: (p.xzb - p.jkzzbx),
       x: (p.yzb - p.jkhzby),
       depth: p.csb,
       r: p.ybbqbj === null ? defaultTargetRadius : p.ybbqbj // 如果没有靶半径则设置一个默认的靶半径
     }
+  }).filter(function (p) {
+    if (isNaN(p.x) || isNaN(p.y) || isNaN(p.depth)) {
+      invalidNum++;
+      return false;
+    }
+    return true;
   });
+  if (invalidNum) {
+    console.warn("无效靶点数据:" + invalidNum + "条");
+  }
+  return points;
 }
 
 // 解析轨迹点数据
 function parseTrackPointsData(points) {
-  return points.map(function (p) {
+  var invalidNum = 0;
+  points = points.map(function (p) {
     return {
       x: parseFloat(p.dxpy),
       y: parseFloat(p.nbpy),
       depth: parseFloat(p.cs)
     }
+  }).filter(function (p) {
+    if (isNaN(p.x) || isNaN(p.y) || isNaN(p.depth)) {
+      invalidNum++;
+      return false;
+    }
+    return true;
   });
+  if (invalidNum) {
+    console.warn("无效轨迹点数据:" + invalidNum + "条");
+  }
+  return points;
 }
 
 function eventListen() {
@@ -1295,10 +1339,22 @@ function eventListen() {
   for (var i = 0; i < selectLineType.length; i++) {
     selectLineType[i].addEventListener("change", function () {
       if (this.id === "check-design-line") {
+        // 不允许两个按钮都关闭
+        if (!curGraph.getRealDrillingLineVisible() && !this.checked) {
+          this.checked = true;
+          return;
+        }
         curGraph.setDesignDrillingLine(this.checked);
       } else if (this.id === "check-real-line") {
+        // 不允许两个按钮都关闭
+        if (!curGraph.getDesignDrillingLineVisible() && !this.checked) {
+          this.checked = true;
+          return;
+        }
         curGraph.setRealDrillingLine(this.checked);
       }
+      headMenu.classList.toggle('is-active');
+      headBurger.classList.toggle('is-active');
     });
   }
   // 输入井名的输入框
@@ -1317,24 +1373,17 @@ function eventListen() {
       dropdown.innerHTML = "";
       return;
     }
-    fetchWellNOByPrefix(wellNameInput.value).then(function (data) {
-      if (data.length === 0) {
-        dropdown.innerHTML = "";
-        return;
-      }
-      dropdown.innerHTML = buildWellNameSelectDropdown(data);
-      var wells = dropdown.getElementsByClassName("dropdown-item");
-      for (var i = 0; i < wells.length; i++) {
-        var well = wells[i];
-        well.addEventListener("click", function () {
-          var wellNO = well.dataset["wellno"];// 构建相应井名对应的url并跳转
-          var path = location.origin + location.pathname + '?' + 'wellNO=' + wellNO;
-          location.assign(path);
-        });
-      }
-    });
+    fetchWellNOAndBuildDropdown(this.value);
   }, 250)); // 防抖,以免频繁的向后端发送请求,执行n毫秒内触发的最后一次动作
-  document.addEventListener("click", function (e) {
+  // 点击输入框,获取最近访问的井
+  wellNameInput.addEventListener("focus", function (e) {
+    if (this.value !== "") return;
+    fetchWellNOAndBuildDropdown(this.value);
+  });
+  document.addEventListener("pointerdown", hideWellNameDropdown);
+  document.addEventListener("touchstart", hideWellNameDropdown);
+  function hideWellNameDropdown(e) {
+    wellNameInput.blur();
     // 点击空白区域清除井名菜单
     var target = e.target || e.srcElement;
     while (target) {
@@ -1344,7 +1393,26 @@ function eventListen() {
       target = target.parentNode;
     }
     dropdown.innerHTML = "";
-  });
+  }
+  function fetchWellNOAndBuildDropdown(name) {
+    fetchWellNOByPrefix(name).then(function (data) {
+      if (data.length === 0) {
+        dropdown.innerHTML = "";
+        return;
+      }
+      dropdown.innerHTML = buildWellNameSelectDropdown(data);
+      var wells = dropdown.getElementsByClassName("dropdown-item");
+      for (var i = 0; i < wells.length; i++) {
+        var well = wells[i];
+        well.addEventListener("click", function () {
+          var wellNO = this.dataset["wellno"];
+          // 构建相应井名对应的url并跳转
+          var path = location.origin + location.pathname + '?' + 'wellNO=' + wellNO;
+          location.assign(path);
+        });
+      }
+    });
+  }
 }
 
 function CanvasGraph(config) {

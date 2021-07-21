@@ -7,7 +7,7 @@
     // verticalProjectionEW:垂直剖面投影图(东西),verticalProjectionNS:垂直剖面投影图(南北)
     // horizontalProjection:水平位移投影图,spatialTrack:立体空间轨迹图
     "defaultGraphType": "spatialTrack",
-    "externalDataBasePath": "http://10.83.23.53:8089",
+    "externalDataBasePath": "http://10.83.6.169:8089",
     // 默认的靶半径,如果不设置则为0
     "defaultTargetRadius": 40,
     "spatialTrack": {
