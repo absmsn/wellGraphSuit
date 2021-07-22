@@ -95,7 +95,7 @@ function initSpatialTrack() {
   var designTrackLineMaterial = new THREE.LineBasicMaterial({color: designTrackLineColor, side: THREE.DoubleSide});
   var designProjectionLineMaterial = new THREE.LineBasicMaterial({color: designProjectionLineColor, side: THREE.DoubleSide});
   // 设计钻线和实钻线的最大深度
-  var maxDepth = Math.max.apply(null, realDepths.concat(designDepths)); // 最大深度
+  var maxDepth = Math.max.apply(null, realDepths); // 最大深度
   var _xyFarthest = xyFarthest;
   // if (maxDepth / xyFarthest > maxZToXyRatio) {
   //   _xyFarthest = maxDepth / maxZToXyRatio;
@@ -116,7 +116,7 @@ function initSpatialTrack() {
     min: depthToZ(maxDepth),
     max: depthToZ(0) // 深度0在z轴的最上方
   }
-  var smallestDashNum = 1; // 在最短的垂线(虚线)上显示的虚线段的数目
+  var smallestDashNum = 10; // 在最短的垂线(虚线)上显示的虚线段的数目
   var gapRatio = 1 / 3; // 间隙占虚线端的比例
   var realAltitudeZ = maxDepth - Math.max.apply(null, realDepths); // 深度最大的点距离xoy平面的垂直距离
   var realVerticalLineMaterial = new THREE.LineDashedMaterial({
