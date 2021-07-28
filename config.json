@@ -2,12 +2,10 @@
     // 颜色必须是有效的颜色字符串、十六进制类型或rgb格式
     // 形如"red", "#ff0000", "rgb(255, 0, 0)"
     // 默认井号
-    "defaultWellNO": "JS2020112001",
+    "defaultWellNO": "123",
     // 页面默认打开的图;
-    // verticalProjectionEW:垂直剖面投影图(东西),verticalProjectionNS:垂直剖面投影图(南北)
-    // horizontalProjection:水平位移投影图,spatialTrack:立体空间轨迹图
     "defaultGraphType": "spatialTrack",
-    "externalDataBasePath": "http://10.83.6.169:8089",
+    "externalDataBasePath": "http://localhost:8000",
     // 默认的靶半径,如果不设置则为0
     "defaultTargetRadius": 40,
     "spatialTrack": {

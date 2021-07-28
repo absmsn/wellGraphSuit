@@ -154,7 +154,7 @@ function initSpatialTrack() {
   // 监听鼠标动作
   var controls = new THREE.OrbitControls(camera, canvas);
   // 是否开启阻尼效果
-  controls.enableDamping = false;
+  controls.enableDamping = true;
   // 是否开启自动旋转
   controls.autoRotate = autoRotate;
 
@@ -191,7 +191,6 @@ function initSpatialTrack() {
   //// 设计钻线
   designDrillLines = new THREE.Group();
   designDrillLines.name = "designDrillLines";
-  designDrillLines.visible = false;
   // 轨迹点
   var points = designTrackPoints.map(function (p) {
     return new THREE.Vector3(p.x, p.y, depthToZ(p.depth));
@@ -382,24 +381,11 @@ function initSpatialTrack() {
   });
   canvas.style.display = "none";
   // 点击之后关闭自动旋转
-  var timerId;
   canvas.addEventListener("click", function () {
     controls.autoRotate = false;
-    if (!timerId) {
-      timerId = setTimeout(function () {
-        controls.autoRotate = true;
-        timerId = null;
-      }, 10000);
-    }
   });
   canvas.addEventListener("touchstart", function () {
     controls.autoRotate = false;
-    if (!timerId) {
-      timerId = setTimeout(function () {
-        controls.autoRotate = true;
-        timerId = null;
-      }, 10000);
-    }
   });
 }
 
@@ -573,7 +559,6 @@ function initHorizontalProjection() {
   // 设计钻线
   var designDrillLines = new THREE.Group();
   designDrillLines.name = "designDrillLines";
-  designDrillLines.visible = false;
   // 设计钻线轨迹点
   var points = designTrackPoints.map(function (p) {
     return new THREE.Vector3(p.x, p.y, 0);
@@ -867,7 +852,6 @@ function initVerticalProjection() {
   //// 设计钻线
   var designDrillLines = new THREE.Group();
   designDrillLines.name = "designDrillLines";
-  designDrillLines.visible = false;
   // 设计钻线轨迹点
   var points = designTrackPoints.map(function (p, i) {
     return new THREE.Vector3(hDesignTracks[i], depthToY(p.depth), 0);
@@ -1155,7 +1139,7 @@ function loadConfigFile(configPath) {
 // 获取实际钻靶点数据
 function fetchRealTargetPoints(wellNO) {
   return new Promise(function (resolve) {
-    externalDataTransceiver.get("/api/jxjs/getBd", {
+    externalDataTransceiver.get("/realTargetPoints", {
       params: {jhdm: wellNO}
     }).then(function (res) {
       try {
@@ -1174,7 +1158,7 @@ function fetchRealTargetPoints(wellNO) {
 // 获取实钻靶点数据
 function fetchDesignTargetPoints(wellNO) {
   return new Promise(function (resolve) {
-    externalDataTransceiver.get("/api/jxjs/getSjBd", {
+    externalDataTransceiver.get("/designTargetPoints", {
       params: {jhdm: wellNO}
     }).then(function (res) {
       try {
@@ -1193,7 +1177,7 @@ function fetchDesignTargetPoints(wellNO) {
 // 获取实钻的轨迹点数据
 function fetchRealTrackPoints(wellNO) {
   return new Promise(function (resolve) {
-    externalDataTransceiver.get("api/jxjs/getLxAll",{
+    externalDataTransceiver.get("/realTrackPoints",{
       params: {jhdm: wellNO}
     }).then(function (res) {
       try {
@@ -1216,7 +1200,7 @@ function fetchRealTrackPoints(wellNO) {
 // 获取设计钻井钻的轨迹点数据
 function fetchDesignTrackPoints(wellNO) {
   return new Promise(function (resolve) {
-    externalDataTransceiver.get("/api/jxjs/getSjAll",{
+    externalDataTransceiver.get("/designTrackPoints", {
       params: {jhdm: wellNO}
     }).then(function (res) {
       try {
@@ -1239,7 +1223,7 @@ function fetchDesignTrackPoints(wellNO) {
 // 根据井名的前缀获取所有以它开头的井的井号
 function fetchWellNOByPrefix(prefix) {
   return new Promise(function (resolve) {
-    externalDataTransceiver.get('/api/jxjs/getJh', {
+    externalDataTransceiver.get('/wellNO', {
       params: {jhdm: prefix}
     }).then(function (res) {
       resolve(res.data);
@@ -1251,7 +1235,7 @@ function fetchWellNOByPrefix(prefix) {
 
 function fetchWellNameByNO(no) {
   return new Promise(function (resolve) {
-    externalDataTransceiver.get('/api/jxjs/getJhbm', {
+    externalDataTransceiver.get('/wellName', {
       params: {jhdm: no}
     }).then(function (res) {
       wellName = res.data.length > 0 ? res.data[0].jhbm : "";
@@ -1304,9 +1288,9 @@ function parseTrackPointsData(points) {
   var invalidNum = 0;
   points = points.map(function (p) {
     return {
-      x: parseFloat(p.dxpy),
-      y: parseFloat(p.nbpy),
-      depth: parseFloat(p.cs)
+      x: parseFloat(p.x),
+      y: parseFloat(p.y),
+      depth: parseFloat(p.depth)
     }
   }).filter(function (p) {
     if (isNaN(p.x) || isNaN(p.y) || isNaN(p.depth)) {
@@ -1356,18 +1340,8 @@ function eventListen() {
   for (var i = 0; i < selectLineType.length; i++) {
     selectLineType[i].addEventListener("change", function () {
       if (this.id === "check-design-line") {
-        // 不允许两个按钮都关闭
-        if (!curGraph.getRealDrillingLineVisible() && !this.checked) {
-          this.checked = true;
-          return;
-        }
         curGraph.setDesignDrillingLine(this.checked);
       } else if (this.id === "check-real-line") {
-        // 不允许两个按钮都关闭
-        if (!curGraph.getDesignDrillingLineVisible() && !this.checked) {
-          this.checked = true;
-          return;
-        }
         curGraph.setRealDrillingLine(this.checked);
       }
       headMenu.classList.toggle('is-active');
